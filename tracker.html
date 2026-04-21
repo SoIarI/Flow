@@ -1,0 +1,2371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pulra · Lead Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@500;700;800&display=swap" rel="stylesheet">
+<!-- Supabase JS client -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+/* ── CONFIG SCREEN ── */
+#configScreen{position:fixed;inset:0;background:var(--bg);z-index:500;display:flex;align-items:center;justify-content:center;padding:20px}
+.config-card{background:var(--s1);border:1px solid var(--b2);border-radius:16px;padding:32px;width:100%;max-width:440px}
+.config-title{font-family:'Syne',sans-serif;font-weight:800;font-size:22px;margin-bottom:4px}
+.config-sub{font-size:11px;color:var(--t3);margin-bottom:24px;line-height:1.6}
+.config-fg{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
+.config-lbl{font-size:9.5px;color:var(--t3);text-transform:uppercase;letter-spacing:0.07em}
+/* ── AUTH SCREEN ── */
+
+.auth-card{background:var(--s1);border:1px solid var(--b2);border-radius:16px;padding:32px;width:100%;max-width:380px}
+.auth-title{font-family:'Syne',sans-serif;font-weight:800;font-size:20px;margin-bottom:4px;display:flex;align-items:center;gap:8px}
+.auth-logo-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 10px rgba(230,53,53,0.6)}
+.auth-sub{font-size:11px;color:var(--t3);margin-bottom:22px}
+.auth-err{font-size:11px;color:var(--danger);margin-top:8px;display:none}
+/* ── UPDATE BANNER ── */
+#updateBanner{display:none;background:var(--green-dim);border-bottom:1px solid rgba(52,211,153,0.2);padding:9px 28px;font-size:11px;color:var(--green);align-items:center;gap:8px}
+#updateBanner.show{display:flex}
+
+
+/* ── NOTIFICATION SETTINGS ── */
+.notif-panel{display:none;position:fixed;right:0;top:0;bottom:0;z-index:140;width:340px;background:var(--s1);border-left:1px solid var(--b2);flex-direction:column;overflow:hidden}
+.notif-panel.open{display:flex;animation:sr 0.18s ease}
+.np-head{padding:15px 20px;border-bottom:1px solid var(--b1);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.np-title{font-family:"Syne",sans-serif;font-weight:700;font-size:13.5px}
+.np-body{padding:16px 20px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:14px}
+.np-section{display:flex;flex-direction:column;gap:8px}
+.np-sec-title{font-size:9.5px;color:var(--t3);text-transform:uppercase;letter-spacing:0.07em;padding-bottom:6px;border-bottom:1px solid var(--b1)}
+.np-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:6px 0}
+.np-row-label{font-size:11.5px;color:var(--t2);flex:1}
+.np-row-sub{font-size:10px;color:var(--t3);margin-top:1px}
+.np-toggle{position:relative;width:36px;height:20px;flex-shrink:0;cursor:pointer}
+.np-toggle input{opacity:0;width:0;height:0;position:absolute}
+.np-slider{position:absolute;inset:0;background:var(--s3);border-radius:99px;border:1px solid var(--b2);transition:all 0.2s}
+.np-slider::before{content:'';position:absolute;width:14px;height:14px;border-radius:50%;background:var(--t3);top:2px;left:2px;transition:all 0.2s}
+.np-toggle input:checked + .np-slider{background:var(--accent-dim);border-color:rgba(230,53,53,0.4)}
+.np-toggle input:checked + .np-slider::before{transform:translateX(16px);background:var(--accent)}
+.np-input{width:100%;background:var(--s2);border:1px solid var(--b2);border-radius:var(--r);padding:7px 10px;color:var(--t1);font-family:"DM Mono",monospace;font-size:11px;outline:none;transition:border-color 0.13s}
+.np-input:focus{border-color:var(--accent)}
+.np-test-btn{padding:6px 14px;border-radius:var(--r);border:1px solid var(--b2);background:transparent;color:var(--t2);font-family:"DM Mono",monospace;font-size:11px;cursor:pointer;transition:all 0.13s;margin-top:4px}
+.np-test-btn:hover{border-color:var(--info);color:var(--info);background:var(--info-dim)}
+.np-save-btn{width:100%;padding:9px;border-radius:var(--r);border:1px solid var(--accent);background:var(--accent);color:#fff;font-family:"DM Mono",monospace;font-size:12px;font-weight:600;cursor:pointer;transition:all 0.13s;margin-top:4px}
+.np-save-btn:hover{background:var(--accent-h)}
+.settings-btn{display:flex;align-items:center;gap:5px;background:transparent;border:1px solid var(--b1);border-radius:99px;padding:5px 12px;font-family:"DM Mono",monospace;font-size:11px;color:var(--t3);cursor:pointer;transition:all 0.13s}
+.settings-btn:hover{border-color:var(--b2);color:var(--t2);background:var(--s2)}
+
+/* ── SYNC STATUS ── */
+.sync-status{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--t3)}
+.sync-dot{width:5px;height:5px;border-radius:50%;background:var(--green)}
+.sync-dot.syncing{background:var(--warn);animation:blink 1s infinite}
+.sync-dot.err{background:var(--danger)}
+/* ── WHO BADGE on cards ── */
+.who-badge{font-size:9px;color:var(--t3);display:flex;align-items:center;gap:3px}
+</style>
+<style>
+:root{
+  --bg:#09090e;--s1:#101016;--s2:#16161f;--s3:#1c1c27;
+  --b1:rgba(255,255,255,0.06);--b2:rgba(255,255,255,0.11);--b3:rgba(255,255,255,0.18);
+  --accent:#e63535;--accent-h:#ff5050;--accent-dim:rgba(230,53,53,0.09);
+  --t1:#ebebf5;--t2:#80809a;--t3:#48485e;
+  --danger:#ff4d6d;--danger-dim:rgba(255,77,109,0.1);
+  --warn:#f5a623;--warn-dim:rgba(245,166,35,0.1);
+  --info:#4b9eff;--info-dim:rgba(75,158,255,0.1);
+  --purple:#a259f7;--purple-dim:rgba(162,89,247,0.1);
+  --green:#34d399;--green-dim:rgba(52,211,153,0.1);
+  --teal:#2dd4bf;--teal-dim:rgba(45,212,191,0.1);
+  --r:8px;--rl:12px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--t1);font-family:'DM Mono',monospace;min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;top:-300px;left:-200px;width:700px;height:700px;background:radial-gradient(circle,rgba(230,53,53,0.04) 0%,transparent 65%);pointer-events:none;z-index:0}
+body::after{content:'';position:fixed;bottom:-200px;right:-100px;width:500px;height:500px;background:radial-gradient(circle,rgba(75,158,255,0.03) 0%,transparent 65%);pointer-events:none;z-index:0}
+::-webkit-scrollbar{width:3px;height:3px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--b2);border-radius:99px}
+
+/* HEADER */
+header{position:sticky;top:0;z-index:100;background:rgba(9,9,14,0.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--b1);padding:0 28px;display:flex;align-items:center;justify-content:space-between;height:54px}
+.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:17px;letter-spacing:-0.3px;display:flex;align-items:center;gap:8px}
+.logo-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 10px rgba(230,53,53,0.6)}
+.logo-sub{font-size:10px;font-weight:400;color:var(--t3);letter-spacing:0.08em;text-transform:uppercase}
+.header-r{display:flex;align-items:center;gap:10px}
+.save-pill{display:flex;align-items:center;gap:6px;background:var(--s2);border:1px solid var(--b1);border-radius:99px;padding:5px 10px;font-size:10px;color:var(--t3)}
+.sdot{width:5px;height:5px;border-radius:50%;background:var(--accent);animation:blink 2.5s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.2}}
+.sdot.saving{background:var(--warn);animation:none}.sdot.err{background:var(--danger);animation:none}
+
+/* TOOLBAR */
+.toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:11px 28px;border-bottom:1px solid var(--b1);background:var(--s1);position:sticky;top:54px;z-index:90}
+.btn{font-family:'DM Mono',monospace;font-size:11.5px;font-weight:500;padding:7px 13px;border-radius:var(--r);border:1px solid var(--b2);background:var(--s2);color:var(--t2);cursor:pointer;transition:all 0.13s;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;line-height:1}
+.btn:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-dim)}
+.btn.primary{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:600}
+.btn.primary:hover{background:var(--accent-h)}
+.btn.ghost{background:transparent;border-color:var(--b1);color:var(--t3)}
+.btn.ghost:hover{border-color:var(--b2);color:var(--t2);background:var(--s2)}
+.sbox{flex:1;min-width:160px;position:relative}
+.sbox input{width:100%;background:var(--s2);border:1px solid var(--b2);border-radius:var(--r);padding:7px 12px 7px 30px;color:var(--t1);font-family:'DM Mono',monospace;font-size:11.5px;outline:none;transition:border-color 0.13s}
+.sbox input::placeholder{color:var(--t3)}.sbox input:focus{border-color:var(--accent)}
+.sbox::before{content:'⌕';position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--t3);font-size:14px;pointer-events:none}
+.sel{background:var(--s2);border:1px solid var(--b2);border-radius:var(--r);padding:7px 11px;color:var(--t2);font-family:'DM Mono',monospace;font-size:11.5px;outline:none;cursor:pointer}
+.sel:focus{border-color:var(--accent)}.sel option{background:var(--s2)}
+.tsep{width:1px;height:20px;background:var(--b1);flex-shrink:0}
+
+/* STATS */
+.stats-bar{display:flex;border-bottom:1px solid var(--b1);background:var(--s1);overflow-x:auto}
+.stat{flex:1;min-width:85px;padding:10px 16px;border-right:1px solid var(--b1);text-align:center;transition:background 0.13s}
+.stat:last-child{border-right:none}.stat:hover{background:var(--s2)}
+.sn{font-family:'Syne',sans-serif;font-size:20px;font-weight:700;line-height:1}
+.sn.a{color:var(--accent)}.sn.y{color:var(--warn)}.sn.r{color:var(--danger)}.sn.g{color:var(--green)}.sn.b{color:var(--info)}
+.sl{font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:0.07em;margin-top:3px}
+
+/* REMINDER */
+.rem{display:none;background:var(--danger-dim);border-bottom:1px solid rgba(255,77,109,0.15);padding:9px 28px;font-size:11px;color:var(--danger);cursor:pointer;align-items:center;gap:8px}
+.rem.show{display:flex}.rem:hover{background:rgba(255,77,109,0.16)}
+
+/* MAIN */
+.main{padding:22px 28px;}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:16px;align-items:start}
+
+/* DEAL GROUP */
+.deal-group{display:flex;flex-direction:column;gap:0;position:relative}
+
+/* LEAD CARD */
+.card{background:var(--s1);border:1px solid var(--b1);border-radius:var(--rl);transition:border-color 0.2s,box-shadow 0.2s}
+.card:hover{border-color:var(--b2);box-shadow:0 4px 20px rgba(0,0,0,0.25)}
+.card.overdue{border-color:rgba(255,77,109,0.28)}.card.due-today{border-color:rgba(245,166,35,0.28)}.card.hipri{border-left:3px solid var(--accent)}.card.no-response{opacity:0.75;border-style:dashed}
+.ctop{padding:13px 15px 11px;display:flex;align-items:flex-start;justify-content:space-between;border-bottom:1px solid var(--b1);gap:10px}
+.ctop-l{flex:1;min-width:0}
+.cdeal{font-family:'Syne',sans-serif;font-weight:700;font-size:14px;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.csub{font-size:10px;color:var(--t3);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cacts{display:flex;gap:3px;flex-shrink:0;position:relative;z-index:10}
+.ib{width:27px;height:27px;border-radius:6px;border:1px solid var(--b1);background:transparent;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:12px;color:var(--t3);transition:all 0.13s;position:relative;overflow:visible}
+.ib:hover{border-color:var(--b2);color:var(--t2);background:var(--s2)}
+.ib.tg:hover{border-color:var(--info);color:var(--info);background:var(--info-dim)}
+.ib.wa:hover{border-color:var(--green);color:var(--green);background:var(--green-dim)}
+.ib.em:hover{border-color:var(--purple);color:var(--purple);background:var(--purple-dim)}
+.ib.ed:hover{border-color:var(--warn);color:var(--warn);background:var(--warn-dim)}
+.ib.del:hover{border-color:var(--danger);color:var(--danger);background:var(--danger-dim)}
+.ib-tip{position:fixed;background:var(--s3);border:1px solid var(--b2);border-radius:5px;padding:4px 9px;font-size:10px;color:var(--t1);white-space:nowrap;pointer-events:none;z-index:9999;opacity:0;transition:opacity 0.1s;transform:translateX(-50%)}
+.ib-tip.show{opacity:1}
+#globalTip{position:fixed;background:var(--s3);border:1px solid var(--b2);border-radius:5px;padding:4px 9px;font-size:10px;color:var(--t1);white-space:nowrap;pointer-events:none;z-index:9999;display:none;transform:translateX(-50%)}
+/* tooltip via JS */
+.cbody{padding:11px 15px;display:flex;flex-direction:column;gap:7px}
+.irow{display:flex;align-items:flex-start;gap:8px;font-size:11px}
+.ilbl{color:var(--t3);width:72px;flex-shrink:0;text-transform:uppercase;letter-spacing:0.04em;font-size:9.5px;padding-top:1px}
+.ival{color:var(--t2);flex:1;min-width:0;line-height:1.5}.ival a{color:var(--info);text-decoration:none}.ival a:hover{text-decoration:underline}
+.clist{display:flex;flex-direction:column;gap:4px}
+.ce{display:flex;align-items:baseline;gap:5px;flex-wrap:wrap;font-size:11px}
+.ce-name{color:var(--t1);font-weight:500}.ce-role{color:var(--t3);font-size:9.5px}
+.sbadge{display:inline-flex;align-items:center;font-size:9.5px;font-weight:500;padding:2px 8px;border-radius:99px;border:1px solid;text-transform:uppercase;letter-spacing:0.05em}
+.s-new{background:var(--info-dim);color:var(--info);border-color:rgba(75,158,255,0.2)}
+.s-contacted{background:var(--purple-dim);color:var(--purple);border-color:rgba(162,89,247,0.2)}
+.s-interested{background:var(--warn-dim);color:var(--warn);border-color:rgba(245,166,35,0.2)}
+.s-meeting{background:var(--accent-dim);color:var(--accent);border-color:rgba(230,53,53,0.2)}
+.s-negotiating{background:rgba(255,140,0,0.09);color:#ff8c00;border-color:rgba(255,140,0,0.2)}
+.s-closed{background:var(--green-dim);color:var(--green);border-color:rgba(52,211,153,0.2)}
+.s-lost{background:var(--danger-dim);color:var(--danger);border-color:rgba(255,77,109,0.2)}
+.s-onhold{background:rgba(128,128,154,0.08);color:var(--t2);border-color:var(--b1)}
+.pills{display:flex;gap:4px;flex-wrap:wrap}
+.pill{font-size:9.5px;padding:2px 7px;border-radius:99px;border:1px solid var(--b1);color:var(--t3)}
+.pill.done{background:var(--accent-dim);color:var(--accent);border-color:rgba(230,53,53,0.2)}
+.furow{display:flex;align-items:center;gap:5px;font-size:10.5px;padding:6px 9px;border-radius:6px;background:var(--s2);margin-top:1px}
+.furow.over{background:var(--danger-dim);color:var(--danger)}.furow.tod{background:var(--warn-dim);color:var(--warn)}.furow.up{color:var(--t2)}
+
+
+/* ── DEAL DRAWER (tickets + log) ── */
+.card-footer{display:flex;border-top:1px solid var(--b1);overflow:hidden;border-radius:0 0 var(--rl) var(--rl)}
+.card-tab{flex:1;display:flex;align-items:center;justify-content:center;gap:5px;padding:7px 10px;font-family:"DM Mono",monospace;font-size:10px;color:var(--t3);cursor:pointer;transition:all 0.13s;border:none;background:transparent;border-right:1px solid var(--b1)}
+.card-tab:last-child{border-right:none}
+.card-tab:hover{background:var(--s2);color:var(--t2)}
+.card-tab.active{background:var(--s2);color:var(--t1)}
+.card-tab .tab-count{background:var(--b2);border-radius:99px;padding:1px 5px;font-size:9px;min-width:16px;text-align:center}
+.card-tab.tab-tickets.active .tab-count{background:var(--accent-dim);color:var(--accent)}
+.card-tab.tab-log.active .tab-count{background:var(--info-dim);color:var(--info)}
+
+.drawer-overlay{position:fixed;inset:0;z-index:120;background:rgba(0,0,0,0.55);backdrop-filter:blur(4px);display:none}
+.drawer-overlay.open{display:block}
+.drawer{position:fixed;right:0;top:0;bottom:0;z-index:130;width:420px;max-width:95vw;background:var(--s1);border-left:1px solid var(--b2);display:flex;flex-direction:column;transform:translateX(100%);transition:transform 0.22s cubic-bezier(0.4,0,0.2,1)}
+.drawer.open{transform:translateX(0)}
+.drawer-head{padding:14px 18px;border-bottom:1px solid var(--b1);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;gap:10px}
+.drawer-title{display:flex;flex-direction:column;gap:2px;min-width:0}
+.drawer-deal{font-family:"Syne",sans-serif;font-weight:700;font-size:14px;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.drawer-sub{font-size:10px;color:var(--t3)}
+.drawer-tabs{display:flex;border-bottom:1px solid var(--b1);flex-shrink:0}
+.dtab{flex:1;padding:9px 12px;font-family:"DM Mono",monospace;font-size:11px;color:var(--t3);cursor:pointer;text-align:center;transition:all 0.13s;border:none;background:transparent;border-bottom:2px solid transparent}
+.dtab:hover{color:var(--t2);background:var(--s2)}
+.dtab.active{color:var(--t1);border-bottom-color:var(--accent);background:var(--s2)}
+.drawer-body{flex:1;overflow-y:auto;display:flex;flex-direction:column}
+.drawer-pane{display:none;flex-direction:column;flex:1;padding:14px}
+.drawer-pane.active{display:flex}
+
+/* TICKETS in drawer */
+.ticket{background:var(--s2);border:1px solid var(--b1);border-radius:var(--r);transition:border-color 0.15s;margin-bottom:8px}
+.ticket:hover{border-color:var(--b2)}
+.ticket:last-child{margin-bottom:0}
+.ticket-top{padding:9px 12px;display:flex;align-items:center;justify-content:space-between;gap:8px;border-bottom:1px solid var(--b1);min-width:0}
+.ticket-left{flex:1;min-width:0;display:flex;align-items:center;gap:8px}
+.ticket-icon{font-size:13px;flex-shrink:0}
+.ticket-title{font-size:12px;font-weight:500;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ticket-acts{display:flex;gap:3px;flex-shrink:0;position:relative;z-index:10}
+.ticket-body{padding:8px 12px;display:flex;flex-direction:column;gap:5px}
+.ticket-row{display:flex;align-items:center;gap:8px;font-size:10.5px}
+.ticket-lbl{color:var(--t3);width:60px;flex-shrink:0;font-size:9.5px;text-transform:uppercase;letter-spacing:0.04em}
+.ticket-val{color:var(--t2);flex:1}
+.ts-badge{display:inline-flex;align-items:center;font-size:9px;font-weight:500;padding:2px 7px;border-radius:99px;border:1px solid;text-transform:uppercase;letter-spacing:0.05em;cursor:pointer;user-select:none}
+.ts-pending{background:var(--warn-dim);color:var(--warn);border-color:rgba(245,166,35,0.2)}
+.ts-scheduled{background:var(--info-dim);color:var(--info);border-color:rgba(75,158,255,0.2)}
+.ts-inprogress{background:var(--purple-dim);color:var(--purple);border-color:rgba(162,89,247,0.2)}
+.ts-completed{background:var(--green-dim);color:var(--green);border-color:rgba(52,211,153,0.2)}
+.ts-cancelled{background:var(--danger-dim);color:var(--danger);border-color:rgba(255,77,109,0.2)}
+.ticket-note{font-size:10px;color:var(--t3);display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+.drawer-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--t3);font-size:11px;gap:8px;padding:40px 20px;text-align:center}
+.drawer-empty-ico{font-size:28px;opacity:0.3}
+.add-ticket-btn{display:flex;align-items:center;justify-content:center;gap:6px;padding:8px;border:1px dashed var(--b2);border-radius:var(--r);background:transparent;color:var(--t3);font-family:"DM Mono",monospace;font-size:11px;cursor:pointer;transition:all 0.13s;width:100%;margin-top:8px}
+.add-ticket-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-dim)}
+
+/* LOG in drawer */
+.log-section{display:flex;flex-direction:column;flex:1}
+.log-entries{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:0}
+.log-entry{padding:10px 14px;border-bottom:1px solid var(--b1);position:relative}
+.log-entry:last-child{border-bottom:none}
+.log-entry-head{display:flex;align-items:center;gap:8px;margin-bottom:5px}
+.log-date{font-size:9.5px;color:var(--t3);flex-shrink:0;margin-left:auto}
+.log-type-tag{font-size:9px;padding:1px 7px;border-radius:99px;border:1px solid;text-transform:uppercase;letter-spacing:0.04em;flex-shrink:0}
+.lt-note{background:var(--info-dim);color:var(--info);border-color:rgba(75,158,255,0.2)}
+.lt-call{background:var(--green-dim);color:var(--green);border-color:rgba(52,211,153,0.2)}
+.lt-meeting{background:var(--accent-dim);color:var(--accent);border-color:rgba(230,53,53,0.2)}
+.lt-email{background:var(--purple-dim);color:var(--purple);border-color:rgba(162,89,247,0.2)}
+.lt-whatsapp{background:var(--green-dim);color:var(--green);border-color:rgba(52,211,153,0.2)}
+.lt-visit{background:var(--teal-dim);color:var(--teal);border-color:rgba(45,212,191,0.2)}
+.lt-other{background:rgba(128,128,154,0.1);color:var(--t2);border-color:var(--b1)}
+.log-text{font-size:11.5px;color:var(--t2);line-height:1.65;word-break:break-word}
+.log-del{position:absolute;top:8px;right:10px;width:18px;height:18px;border-radius:4px;border:none;background:transparent;color:var(--t3);cursor:pointer;font-size:10px;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity 0.13s}
+.log-entry:hover .log-del{opacity:1}
+.log-del:hover{color:var(--danger)}
+.log-add{flex-shrink:0;padding:10px 14px;border-top:1px solid var(--b1);background:var(--s2);display:flex;flex-direction:column;gap:7px}
+.log-type-row{display:flex;gap:5px;flex-wrap:wrap}
+.log-type-opt{padding:3px 9px;border:1px solid var(--b2);border-radius:99px;font-size:10px;color:var(--t3);cursor:pointer;transition:all 0.12s;background:transparent;font-family:"DM Mono",monospace}
+.log-type-opt:hover{border-color:var(--info);color:var(--info)}
+.log-type-opt.sel{background:var(--info-dim);border-color:rgba(75,158,255,0.3);color:var(--info);font-weight:500}
+.log-input-row{display:flex;gap:6px;align-items:flex-end}
+.log-textarea{flex:1;background:var(--s1);border:1px solid var(--b2);border-radius:var(--r);padding:7px 10px;color:var(--t1);font-family:"DM Mono",monospace;font-size:11px;outline:none;resize:none;height:58px;line-height:1.55;transition:border-color 0.13s}
+.log-textarea:focus{border-color:var(--info)}
+.log-submit{padding:7px 12px;border-radius:var(--r);border:1px solid rgba(75,158,255,0.3);background:var(--info-dim);color:var(--info);font-family:"DM Mono",monospace;font-size:11px;font-weight:500;cursor:pointer;white-space:nowrap;transition:all 0.13s;align-self:flex-end;height:34px}
+.log-submit:hover{background:var(--info);color:#fff}
+.log-hint{font-size:9.5px;color:var(--t3)}
+.log-count-badge{background:var(--info-dim);color:var(--info);font-size:9px;padding:1px 6px;border-radius:99px;border:1px solid rgba(75,158,255,0.2)}
+
+
+/* ── FOLLOW-UP PANEL ── */
+.fu-panel-overlay{position:fixed;inset:0;z-index:115;background:transparent;display:none}
+.fu-panel-overlay.open{display:block}
+.fu-panel{
+  position:fixed;top:54px;left:0;right:0;z-index:116;
+  background:var(--s1);border-bottom:2px solid var(--danger);
+  box-shadow:0 8px 32px rgba(0,0,0,0.45);
+  max-height:0;overflow:hidden;
+  transition:max-height 0.25s cubic-bezier(0.4,0,0.2,1);
+}
+.fu-panel.open{max-height:480px}
+.fu-panel-inner{padding:16px 28px 20px;overflow-y:auto;max-height:460px}
+.fu-panel-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.fu-panel-title{font-family:"Syne",sans-serif;font-weight:700;font-size:14px;color:var(--t1);display:flex;align-items:center;gap:8px}
+.fu-panel-count{background:var(--danger-dim);color:var(--danger);font-size:10px;padding:2px 8px;border-radius:99px;border:1px solid rgba(255,77,109,0.25)}
+.fu-panel-close{width:26px;height:26px;border-radius:5px;border:1px solid var(--b1);background:transparent;color:var(--t2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;transition:all 0.13s}
+.fu-panel-close:hover{border-color:var(--danger);color:var(--danger)}
+.fu-tabs{display:flex;gap:0;margin-bottom:14px;border:1px solid var(--b1);border-radius:var(--r);overflow:hidden}
+.fu-tab{flex:1;padding:6px 12px;font-family:"DM Mono",monospace;font-size:10.5px;color:var(--t3);cursor:pointer;background:transparent;border:none;transition:all 0.13s;text-align:center}
+.fu-tab:hover{background:var(--s2);color:var(--t2)}
+.fu-tab.active{background:var(--s2);color:var(--t1);font-weight:500}
+.fu-list{display:flex;flex-direction:column;gap:6px}
+.fu-item{
+  display:flex;align-items:center;gap:12px;
+  padding:10px 14px;
+  background:var(--s2);border:1px solid var(--b1);border-radius:var(--r);
+  cursor:pointer;transition:all 0.15s;position:relative;
+  text-align:left;width:100%;font-family:inherit;
+}
+.fu-item:hover{border-color:var(--b2);background:var(--s3)}
+.fu-item.unseen{border-color:rgba(230,53,53,0.3)}
+.fu-item.unseen::before{content:'';position:absolute;top:10px;right:10px;width:6px;height:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 6px var(--accent)}
+.fu-item-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.fu-item-dot.over{background:var(--danger)}
+.fu-item-dot.today{background:var(--warn)}
+.fu-item-dot.up{background:var(--info)}
+.fu-item-body{flex:1;min-width:0}
+.fu-item-name{font-size:12px;font-weight:500;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fu-item-meta{font-size:10px;color:var(--t3);margin-top:2px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.fu-item-date{font-size:10.5px;font-weight:500;flex-shrink:0}
+.fu-item-date.over{color:var(--danger)}
+.fu-item-date.today{color:var(--warn)}
+.fu-item-date.up{color:var(--info)}
+.fu-item-stage{font-size:9px;padding:1px 7px;border-radius:99px;border:1px solid var(--b1);color:var(--t3);flex-shrink:0}
+.fu-dismiss{font-size:9px;color:var(--t3);padding:3px 8px;border:1px solid var(--b1);border-radius:99px;cursor:pointer;transition:all 0.12s;flex-shrink:0;background:transparent;font-family:"DM Mono",monospace;white-space:nowrap}
+.fu-dismiss:hover{border-color:var(--green);color:var(--green);background:var(--green-dim)}
+.fu-empty{text-align:center;padding:30px 20px;color:var(--t3);font-size:11px}
+.fu-empty-ico{font-size:28px;opacity:0.3;margin-bottom:8px}
+
+/* notification dot on reminder bar */
+.rem-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--accent);margin-right:4px;animation:blink 2s infinite;flex-shrink:0}
+.rem{cursor:pointer;gap:8px}
+.rem-badge{display:inline-flex;align-items:center;justify-content:center;background:var(--danger);color:#fff;font-size:9px;font-weight:600;min-width:18px;height:18px;border-radius:99px;padding:0 5px;flex-shrink:0}
+
+.nsnip{font-size:10.5px;color:var(--t3);line-height:1.55;border-left:2px solid var(--b2);padding-left:8px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+
+/* LOCATION PILLS */
+.loc-pills{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.loc-pill{padding:5px 12px;border:1px solid var(--b2);border-radius:99px;background:var(--s2);color:var(--t2);font-size:11px;cursor:pointer;transition:all 0.13s;user-select:none}
+.loc-pill:hover{border-color:var(--b3);color:var(--t1)}
+.loc-pill.active{background:var(--accent-dim);border-color:rgba(230,53,53,0.35);color:var(--accent);font-weight:500}
+.loc-pill.loc-custom-btn{border-style:dashed;color:var(--t3)}
+.loc-pill.loc-custom-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-dim)}
+.loc-tag{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;background:var(--accent-dim);border:1px solid rgba(230,53,53,0.2);border-radius:99px;font-size:9.5px;color:var(--accent)}
+.loc-tag-rm{cursor:pointer;opacity:0.6;font-size:10px;line-height:1}&
+.loc-tag-rm:hover{opacity:1}
+
+/* No Response badge */
+.s-noresponse{background:rgba(128,128,154,0.12);color:#7070a0;border-color:rgba(128,128,154,0.2)}
+
+/* DELIVERY BADGE */
+.del-badge{display:inline-flex;align-items:center;gap:5px;font-size:9.5px;padding:3px 9px;border-radius:99px;border:1px solid}
+.del-ewity{background:var(--teal-dim);color:var(--teal);border-color:rgba(45,212,191,0.2)}
+.del-self{background:var(--purple-dim);color:var(--purple);border-color:rgba(162,89,247,0.2)}
+.del-none{background:var(--s2);color:var(--t3);border-color:var(--b1)}
+
+/* TICKET CARD */
+.ticket{background:var(--s2);border:1px solid var(--b1);border-radius:var(--r);transition:border-color 0.15s}
+.ticket:hover{border-color:var(--b2)}
+.ticket-top{padding:9px 12px;display:flex;align-items:center;justify-content:space-between;gap:8px;border-bottom:1px solid var(--b1);min-width:0}
+.ticket-left{flex:1;min-width:0;display:flex;align-items:center;gap:8px}
+.ticket-icon{font-size:13px;flex-shrink:0}
+.ticket-title{font-size:12px;font-weight:500;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ticket-acts{display:flex;gap:3px;flex-shrink:0;position:relative;z-index:10}
+.ticket-body{padding:8px 12px;display:flex;flex-direction:column;gap:5px}
+.ticket-row{display:flex;align-items:center;gap:8px;font-size:10.5px}
+.ticket-lbl{color:var(--t3);width:60px;flex-shrink:0;font-size:9.5px;text-transform:uppercase;letter-spacing:0.04em}
+.ticket-val{color:var(--t2);flex:1}
+.ts-badge{display:inline-flex;align-items:center;font-size:9px;font-weight:500;padding:2px 7px;border-radius:99px;border:1px solid;text-transform:uppercase;letter-spacing:0.05em}
+.ts-pending{background:var(--warn-dim);color:var(--warn);border-color:rgba(245,166,35,0.2)}
+.ts-scheduled{background:var(--info-dim);color:var(--info);border-color:rgba(75,158,255,0.2)}
+.ts-inprogress{background:var(--purple-dim);color:var(--purple);border-color:rgba(162,89,247,0.2)}
+.ts-completed{background:var(--green-dim);color:var(--green);border-color:rgba(52,211,153,0.2)}
+.ts-cancelled{background:var(--danger-dim);color:var(--danger);border-color:rgba(255,77,109,0.2)}
+.ticket-note{font-size:10px;color:var(--t3);display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+
+/* OVERLAY + MODAL */
+.overlay{display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,0.82);backdrop-filter:blur(8px);align-items:center;justify-content:center;padding:20px}
+.overlay.open{display:flex}
+.modal{background:var(--s1);border:1px solid var(--b2);border-radius:16px;width:100%;max-width:660px;max-height:92vh;overflow-y:auto;animation:up 0.18s ease}
+.modal.sm{max-width:480px}
+@keyframes up{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+.mhd{padding:19px 24px 14px;border-bottom:1px solid var(--b1);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--s1);z-index:1;border-radius:16px 16px 0 0}
+.mtitle{font-family:'Syne',sans-serif;font-weight:700;font-size:16px}
+.mcls{width:30px;height:30px;border-radius:6px;border:1px solid var(--b1);background:transparent;color:var(--t2);cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;transition:all 0.13s}
+.mcls:hover{border-color:var(--danger);color:var(--danger)}
+.mbody{padding:20px 24px;display:flex;flex-direction:column;gap:15px}
+.mft{padding:13px 24px;border-top:1px solid var(--b1);display:flex;gap:8px;justify-content:flex-end;position:sticky;bottom:0;background:var(--s1);border-radius:0 0 16px 16px}
+
+/* FORM */
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+.frow.t3{grid-template-columns:1fr 1fr 1fr}
+.fg{display:flex;flex-direction:column;gap:5px}
+.fg.full{grid-column:1/-1}
+.flbl{font-size:9.5px;color:var(--t3);text-transform:uppercase;letter-spacing:0.07em}
+.fsec{font-size:9.5px;color:var(--t3);text-transform:uppercase;letter-spacing:0.07em;padding-bottom:6px;border-bottom:1px solid var(--b1);display:flex;align-items:center;justify-content:space-between}
+input[type=text],input[type=email],input[type=tel],input[type=date],input[type=datetime-local],select,textarea{background:var(--s2);border:1px solid var(--b2);border-radius:var(--r);padding:8px 11px;color:var(--t1);font-family:'DM Mono',monospace;font-size:11.5px;outline:none;transition:border-color 0.13s;width:100%}
+input::placeholder,textarea::placeholder{color:var(--t3)}
+input:focus,select:focus,textarea:focus{border-color:var(--accent)}
+textarea{resize:vertical;min-height:70px;line-height:1.6}
+select option{background:var(--s2)}
+.cbg{display:flex;align-items:center;gap:7px}
+.cbg input[type=checkbox]{width:15px;height:15px;accent-color:var(--accent);cursor:pointer;flex-shrink:0}
+.cbg label{font-size:11.5px;color:var(--t2);cursor:pointer;text-transform:none;letter-spacing:0}
+.cks{display:flex;gap:16px;flex-wrap:wrap}
+
+/* FOLLOW-UP QUICK PICK */
+.fu-opts{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
+.fu-opt{padding:6px 4px;border:1px solid var(--b2);border-radius:var(--r);background:var(--s2);color:var(--t2);font-family:'DM Mono',monospace;font-size:10px;cursor:pointer;transition:all 0.13s;text-align:center;line-height:1.3}
+.fu-opt:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-dim)}
+.fu-opt.active{border-color:var(--accent);color:var(--accent);background:var(--accent-dim);font-weight:500}
+.fu-custom-row{display:flex;flex-direction:column;gap:5px;margin-top:4px}
+
+/* DELIVERY TOGGLE */
+.del-toggle{display:flex;gap:6px}
+.del-opt{flex:1;padding:8px 10px;border:1px solid var(--b2);border-radius:var(--r);background:var(--s2);color:var(--t2);font-family:'DM Mono',monospace;font-size:11px;cursor:pointer;transition:all 0.13s;text-align:center}
+.del-opt:hover{border-color:var(--b3)}
+.del-opt.active-ewity{border-color:var(--teal);color:var(--teal);background:var(--teal-dim)}
+.del-opt.active-self{border-color:var(--purple);color:var(--purple);background:var(--purple-dim)}
+.del-opt.active-none{border-color:var(--b2);color:var(--t2);background:var(--s3)}
+
+/* MULTI-CONTACT */
+.ctc-wrap{display:flex;flex-direction:column;gap:8px}
+.ctc-card{background:var(--s2);border:1px solid var(--b1);border-radius:var(--r);padding:12px 13px}
+
+</style>
+
+<!-- CONFIG SCREEN (first-time setup) -->
+<div id="configScreen" style="position:fixed;inset:0;background:var(--bg);z-index:500;display:flex;align-items:center;justify-content:center;padding:20px">
+  <div class="config-card">
+    <div class="config-title" style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+      <div style="width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 10px rgba(230,53,53,0.6)"></div>
+      Pulra Leads
+    </div>
+    <div class="config-sub">First-time setup — connect to your shared database.<br>These credentials are saved on this device only.</div>
+    <div class="config-fg"><label class="config-lbl">Supabase Project URL</label><input type="text" id="cfg_url" placeholder="https://xxxx.supabase.co"></div>
+    <div class="config-fg"><label class="config-lbl">Supabase Anon Key</label><input type="text" id="cfg_key" placeholder="eyJhbGciOiJIUzI1NiIs..."></div>
+    <div class="config-fg" style="margin-top:4px"><label class="config-lbl">Your Name (shown on changes)</label><input type="text" id="cfg_name" placeholder="e.g. Navaal"></div>
+    <p style="font-size:10px;color:var(--t3);margin-bottom:16px;line-height:1.6">Find URL and key in your Supabase dashboard → Settings → API. Your name is shown next to changes you make.</p>
+    <button class="btn primary" style="width:100%;justify-content:center;padding:10px" onclick="saveConfig()">Connect →</button>
+    <div id="cfgErr" style="font-size:11px;color:var(--danger);margin-top:8px;display:none"></div>
+  </div>
+</div>
+
+<!-- UPDATE BANNER -->
+<div id="updateBanner">
+  <span>🎉</span>
+  <span id="updateTxt">A new version is available</span>
+  <button class="btn ghost" style="padding:4px 10px;font-size:10px;margin-left:auto" onclick="reloadForUpdate()">Reload to update ↻</button>
+  <button style="background:none;border:none;color:var(--green);cursor:pointer;font-size:12px;padding:0 4px" onclick="document.getElementById('updateBanner').classList.remove('show')">✕</button>
+</div>
+
+<header>
+  <div class="logo"><div class="logo-dot"></div>PULRA<span class="logo-sub">Leads</span></div>
+  <div class="header-r">
+    <div class="sync-status"><div class="sync-dot" id="syncDot"></div><span id="syncLbl">connecting…</span></div>
+    <div style="display:flex;align-items:center;gap:6px;background:var(--s2);border:1px solid var(--b1);border-radius:99px;padding:4px 12px 4px 8px">
+      <div style="width:20px;height:20px;border-radius:50%;background:var(--accent-dim);border:1px solid rgba(230,53,53,0.3);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--accent);font-weight:600" id="userAvatar">P</div>
+      <span style="font-size:11px;color:var(--t2)" id="userName">Pulra</span>
+    </div>
+    <button class="settings-btn" onclick="openNotifPanel()" title="Notification Settings">⚙ Notifications</button>
+    <button class="btn ghost" onclick="toggleScript()">📞 Script</button>
+  </div>
+</header>
+
+<div class="rem" id="remBar" onclick="toggleFuPanel()">
+  <div class="rem-dot" id="remDot"></div>
+  <div class="rem-badge" id="remBadge">0</div>
+  <span id="remTxt"></span>
+  <span style="margin-left:auto;font-size:10px;opacity:0.7" id="remChevron">▾</span>
+</div>
+
+<!-- FOLLOW-UP PANEL -->
+<div class="fu-panel-overlay" id="fuPanelOverlay" onclick="closeFuPanel()"></div>
+<div class="fu-panel" id="fuPanel">
+  <div class="fu-panel-inner">
+    <div class="fu-panel-head">
+      <div class="fu-panel-title">
+        Follow-up Review
+        <span class="fu-panel-count" id="fuPanelCount"></span>
+      </div>
+      <button class="fu-panel-close" onclick="closeFuPanel()">&#x2715;</button>
+    </div>
+    <div class="fu-tabs">
+      <button class="fu-tab active" id="futab-all" onclick="switchFuTab('all')">All</button>
+      <button class="fu-tab" id="futab-over" onclick="switchFuTab('over')">Overdue</button>
+      <button class="fu-tab" id="futab-today" onclick="switchFuTab('today')">Today</button>
+      <button class="fu-tab" id="futab-up" onclick="switchFuTab('up')">Upcoming</button>
+    </div>
+    <div class="fu-list" id="fuList"></div>
+  </div>
+</div>
+
+<div class="toolbar">
+  <button class="btn primary" onclick="openLeadModal()">＋ New Lead</button>
+  <div class="tsep"></div>
+  <div class="sbox"><input type="text" id="qS" placeholder="Search…" oninput="renderAll()"></div>
+  <select class="sel" id="qSt" onchange="renderAll()">
+    <option value="">All stages</option>
+    <option>New</option><option>Contacted</option><option>Interested</option>
+    <option>Meeting Set</option><option>Negotiating</option>
+    <option>Closed</option><option>Lost</option><option>No Response</option><option>On Hold</option>
+  </select>
+  <select class="sel" id="qFu" onchange="renderAll()">
+    <option value="">All follow-ups</option>
+    <option value="over">Overdue</option><option value="tod">Due today</option><option value="up">Upcoming</option>
+  </select>
+  <select class="sel" id="qPr" onchange="renderAll()">
+    <option value="">All priorities</option>
+    <option>High</option><option>Normal</option><option>Low</option>
+  </select>
+  <div class="tsep"></div>
+  <button class="btn ghost" onclick="exportCSV()">⬇ CSV</button>
+  <button class="btn ghost" onclick="clearAll()" style="margin-left:auto;color:var(--t3)">Clear all</button>
+</div>
+
+<div class="stats-bar" id="statsBar"></div>
+
+<div class="main">
+  <div class="grid" id="leadsGrid"></div>
+  <div class="empty" id="emptyState" style="display:none">
+    <div class="eico">◎</div><h3>No leads yet</h3>
+    <p>Add your first restaurant to get started.<br>All data saves automatically to your browser.</p>
+  </div>
+</div>
+
+<!-- LEAD MODAL -->
+<div class="overlay" id="leadOv" onclick="if(event.target.id==='leadOv')tryCloseLeadModal()">
+<div class="modal">
+  <div class="mhd"><span class="mtitle" id="lmTitle">New Lead</span><button class="mcls" onclick="tryCloseLeadModal()">&#x2715;</button></div>
+  <div class="mbody">
+
+    <div class="fsec"><span>Business / Lead</span></div>
+    <div class="frow">
+      <div class="fg"><label class="flbl">Business Name *</label><input type="text" id="f_deal" placeholder="e.g. The Sea Grill, Corner Mart…"></div>
+      <div class="fg full" style="grid-column:1/-1">
+        <label class="flbl">Locations / Islands <span style="color:var(--t3);font-weight:400">(select all that apply)</span></label>
+        <div class="loc-pills" id="locPills">
+          <div class="loc-pill" data-val="Male" onclick="toggleLoc(this)">Malé</div>
+          <div class="loc-pill" data-val="Hulhumale" onclick="toggleLoc(this)">Hulhumalé</div>
+          <div class="loc-pill" data-val="Villimale" onclick="toggleLoc(this)">Villimalé</div>
+          <div class="loc-pill loc-custom-btn" onclick="addCustomLoc()">＋ Other island</div>
+        </div>
+        <div id="customLocWrap" style="display:none;margin-top:6px;gap:6px;align-items:center">
+          <input type="text" id="customLocInput" placeholder="Island name…" style="flex:1" onkeydown="if(event.key==='Enter')confirmCustomLoc()">
+          <button class="btn ghost" style="padding:6px 10px;font-size:11px" onclick="confirmCustomLoc()">Add</button>
+        </div>
+        <input type="hidden" id="f_loc">
+      </div>
+    </div>
+    <div class="frow">
+      <div class="fg"><label class="flbl">Business Type</label>
+        <select id="f_type_sel" onchange="onTypeChange()">
+          <option value="">— Select type —</option>
+          <optgroup label="Food & Beverage">
+            <option value="Restaurant">Restaurant</option>
+            <option value="Café">Café</option>
+            <option value="Fast Food">Fast Food</option>
+            <option value="Fine Dining">Fine Dining</option>
+            <option value="Casual Dining">Casual Dining</option>
+            <option value="Buffet">Buffet</option>
+            <option value="Food Court">Food Court</option>
+            <option value="Bakery">Bakery</option>
+            <option value="Ice Cream & Desserts">Ice Cream & Desserts</option>
+            <option value="Juice Bar">Juice Bar</option>
+            <option value="Tea House">Tea House</option>
+            <option value="Pizza">Pizza</option>
+            <option value="Grill & BBQ">Grill & BBQ</option>
+            <option value="Seafood">Seafood</option>
+            <option value="Asian Cuisine">Asian Cuisine</option>
+            <option value="Indian Cuisine">Indian Cuisine</option>
+            <option value="Middle Eastern">Middle Eastern</option>
+          </optgroup>
+          <optgroup label="Retail & Services">
+            <option value="Supermarket">Supermarket</option>
+            <option value="Mini Mart">Mini Mart</option>
+            <option value="Grocery Store">Grocery Store</option>
+            <option value="Convenience Store">Convenience Store</option>
+            <option value="Pharmacy">Pharmacy</option>
+            <option value="Bakery & Sweets Shop">Bakery & Sweets Shop</option>
+          </optgroup>
+          <optgroup label="Hospitality">
+            <option value="Hotel Restaurant">Hotel Restaurant</option>
+            <option value="Resort">Resort</option>
+            <option value="Guesthouse">Guesthouse</option>
+          </optgroup>
+          <option value="custom">Other / Custom…</option>
+        </select>
+        <input type="text" id="f_type" placeholder="Describe business type…" style="display:none;margin-top:6px">
+      </div>
+      <div class="fg"><label class="flbl">No. of Outlets</label><input type="text" id="f_branches" placeholder="e.g. 1, 3+"></div>
+    </div>
+
+    <div class="fsec"><span>Status</span></div>
+    <div class="frow">
+      <div class="fg"><label class="flbl">Stage</label>
+        <select id="f_stage"><option>New</option><option>Contacted</option><option>Interested</option><option>Meeting Set</option><option>Negotiating</option><option>Closed</option><option>Lost</option><option>No Response</option><option>On Hold</option></select>
+      </div>
+      <div class="fg"><label class="flbl">Priority</label>
+        <select id="f_pri"><option>Normal</option><option>High</option><option>Low</option></select>
+      </div>
+    </div>
+
+    <div class="fsec"><span>Follow-up</span></div>
+    <div class="cbg" style="margin-bottom:8px"><input type="checkbox" id="f_fuR"><label for="f_fuR">Follow-up required</label></div>
+    <div class="fu-opts" id="fuOpts">
+      <div class="fu-opt" onclick="setFuPreset(1,'Tomorrow')">Tomorrow</div>
+      <div class="fu-opt" onclick="setFuPreset(3,'In 3 days')">In 3 days</div>
+      <div class="fu-opt" onclick="setFuPreset(7,'In 1 week')">In 1 week</div>
+      <div class="fu-opt" onclick="setFuPreset(14,'In 2 weeks')">In 2 weeks</div>
+      <div class="fu-opt" onclick="setFuPreset(30,'In 1 month')">In 1 month</div>
+      <div class="fu-opt" onclick="setFuPreset(60,'In 2 months')">In 2 months</div>
+      <div class="fu-opt" onclick="setFuPreset(90,'In 3 months')">In 3 months</div>
+      <div class="fu-opt" id="fuCustomOpt" onclick="toggleFuCustom()">Custom date</div>
+    </div>
+    <div class="fu-custom-row" id="fuCustomRow" style="display:none">
+      <label class="flbl">Pick a date</label>
+      <input type="date" id="f_fuD" onchange="onFuDateChange()">
+    </div>
+    <div style="font-size:11px;color:var(--t3);margin-top:4px" id="fuDateDisplay"></div>
+
+    <div class="fsec"><span>Current Setup</span></div>
+    <div class="frow">
+      <div class="fg"><label class="flbl">POS / Software Used</label><input type="text" id="f_soft" placeholder="e.g. Ewity, none"></div>
+      <div class="fg"><label class="flbl">Current Delivery App</label><input type="text" id="f_del" placeholder="e.g. Swiggy, in-house"></div>
+    </div>
+
+    <div class="fsec"><span>Delivery Management</span></div>
+    <label class="flbl" style="margin-bottom:6px;display:block">How will delivery be managed on Pulra?</label>
+    <div class="del-toggle" id="delToggle">
+      <div class="del-opt active-none" onclick="setDelMode('none')" id="dm_none">Not set</div>
+      <div class="del-opt" onclick="setDelMode('ewity')" id="dm_ewity">🚚 Managed by Ewity</div>
+      <div class="del-opt" onclick="setDelMode('self')" id="dm_self">🏠 Self-managed</div>
+    </div>
+    <input type="hidden" id="f_delMode" value="none">
+
+    <div class="fsec">
+      <span>Contacts</span>
+      <button class="btn ghost" style="padding:3px 9px;font-size:10px;border-radius:5px" onclick="addCtc()">＋ Add</button>
+    </div>
+    <div class="ctc-wrap" id="ctcList"></div>
+
+    <div class="fsec"><span>Outreach</span></div>
+    <div class="cks">
+      <div class="cbg"><input type="checkbox" id="f_em"><label for="f_em">Email sent</label></div>
+      <div class="cbg"><input type="checkbox" id="f_wa"><label for="f_wa">WhatsApp</label></div>
+      <div class="cbg"><input type="checkbox" id="f_vb"><label for="f_vb">Viber</label></div>
+      <div class="cbg"><input type="checkbox" id="f_cl"><label for="f_cl">Called</label></div>
+      <div class="cbg"><input type="checkbox" id="f_ip"><label for="f_ip">Met in person</label></div>
+    </div>
+    <div class="frow">
+      <div class="fg"><label class="flbl">Last Contacted</label><input type="date" id="f_lc"></div>
+    </div>
+
+    <div class="fsec"><span>Notes</span></div>
+    <div class="fg"><textarea id="f_notes" placeholder="Key details, objections, context…"></textarea></div>
+  </div>
+  <div class="mft">
+    <button class="btn ghost" onclick="tryCloseLeadModal()">Cancel</button>
+    <button class="btn primary" onclick="saveLead()">Save Lead</button>
+  </div>
+</div>
+</div>
+
+<!-- TICKET MODAL -->
+<div class="overlay" id="tickOv" onclick="if(event.target.id==='tickOv')tryCloseTicketModal()">
+<div class="modal sm">
+  <div class="mhd"><span class="mtitle" id="tmTitle">New Ticket</span><button class="mcls" onclick="tryCloseTicketModal()">&#x2715;</button></div>
+  <div class="mbody">
+    <div class="frow">
+      <div class="fg"><label class="flbl">Ticket Type</label>
+        <select id="t_type" onchange="onTicketTypeChange()">
+          <option value="meeting">&#128197; Meeting</option>
+          <option value="training">&#127891; Training</option>
+          <option value="menu">&#128203; Menu Update</option>
+          <option value="onboarding">&#128640; Onboarding</option>
+          <option value="support">&#128295; Support</option>
+          <option value="followup">&#128222; Follow-up Call</option>
+          <option value="demo">&#128187; Demo</option>
+          <option value="contract">&#128221; Contract</option>
+          <option value="installation">&#128295; Installation</option>
+          <option value="review">&#11088; Review</option>
+          <option value="other">&#9675; Other</option>
+        </select>
+      </div>
+      <div class="fg"><label class="flbl">Status</label>
+        <select id="t_status">
+          <option value="pending">Pending</option>
+          <option value="scheduled">Scheduled</option>
+          <option value="inprogress">In Progress</option>
+          <option value="completed">Completed</option>
+          <option value="cancelled">Cancelled</option>
+        </select>
+      </div>
+    </div>
+    <div class="fg"><label class="flbl">Title / Description</label><input type="text" id="t_title" placeholder="Brief description of this ticket&#x2026;"></div>
+
+    <div class="fsec"><span id="t_dateLbl">Date &amp; Time</span></div>
+    <div class="fu-opts" style="margin-bottom:6px">
+      <div class="fu-opt tk-opt" onclick="setTicketPreset(0,this)">Today</div>
+      <div class="fu-opt tk-opt" onclick="setTicketPreset(1,this)">Tomorrow</div>
+      <div class="fu-opt tk-opt" onclick="setTicketPreset(3,this)">In 3 days</div>
+      <div class="fu-opt tk-opt" onclick="setTicketPreset(7,this)">Next week</div>
+      <div class="fu-opt tk-opt" onclick="setTicketPreset(14,this)">2 weeks</div>
+      <div class="fu-opt tk-opt" onclick="setTicketPreset(30,this)">1 month</div>
+      <div class="fu-opt tk-opt" onclick="setTicketPreset(60,this)">2 months</div>
+      <div class="fu-opt tk-opt" onclick="openTicketDatePicker(this)">Pick date &#128197;</div>
+    </div>
+    <div class="frow">
+      <div class="fg"><label class="flbl">Date</label><input type="date" id="t_date" onchange="onTicketDateChange()"></div>
+      <div class="fg"><label class="flbl">Time</label><input type="time" id="t_time"></div>
+    </div>
+    <div style="font-size:11px;color:var(--accent);margin-top:2px;min-height:16px" id="tkDateDisplay"></div>
+
+    <div class="frow">
+      <div class="fg"><label class="flbl">Assigned To</label><input type="text" id="t_assigned" placeholder="Name or team&#x2026;"></div>
+      <div class="fg"><label class="flbl">Priority</label>
+        <select id="t_pri">
+          <option value="normal">Normal</option>
+          <option value="high">High</option>
+          <option value="low">Low</option>
+        </select>
+      </div>
+    </div>
+    <div class="fg"><label class="flbl">Notes</label><textarea id="t_notes" placeholder="Details, agenda, instructions&#x2026;" style="min-height:60px"></textarea></div>
+  </div>
+  <div class="mft">
+    <button class="btn ghost" onclick="tryCloseTicketModal()">Cancel</button>
+    <button class="btn primary" onclick="saveTicket()">Save Ticket</button>
+  </div>
+</div>
+</div>
+
+<!-- TELEGRAM MODAL -->
+<div class="overlay" id="tgOv" onclick="if(event.target.id==='tgOv')closeTg()">
+<div class="modal sm">
+  <div class="mhd"><span class="mtitle" style="color:var(--info)">✈ Telegram</span><button class="mcls" onclick="closeTg()">✕</button></div>
+  <div class="mbody">
+    <div class="fg" id="tgCtcWrap"></div>
+    <div class="fg"><label class="flbl">Telegram Username</label><input type="text" id="tg_h" placeholder="@username" oninput="updMsg('tg')"></div>
+    <div class="fg"><label class="flbl">Message Preview</label><div class="tg-preview" id="tgPrev"></div></div>
+    <div class="fg"><label class="flbl">Custom message (blank = template)</label><textarea id="tg_c" style="min-height:55px" oninput="updMsg('tg')"></textarea></div>
+    <p style="font-size:10px;color:var(--t3);line-height:1.6">Opens Telegram Web with message pre-filled.</p>
+  </div>
+  <div class="mft">
+    <button class="btn ghost" onclick="closeTg()">Cancel</button>
+    <button class="btn primary" style="background:var(--info);border-color:var(--info)" onclick="sendTg()">Open Telegram ↗</button>
+  </div>
+</div>
+</div>
+
+<!-- WHATSAPP MODAL -->
+<div class="overlay" id="waOv" onclick="if(event.target.id==='waOv')closeWa()">
+<div class="modal sm">
+  <div class="mhd"><span class="mtitle" style="color:var(--green)">💬 WhatsApp</span><button class="mcls" onclick="closeWa()">✕</button></div>
+  <div class="mbody">
+    <div class="fg" id="waCtcWrap"></div>
+    <div class="fg"><label class="flbl">Phone Number</label><input type="tel" id="wa_ph" placeholder="+9607xxxxxx" oninput="updMsg('wa')"></div>
+    <div class="fg"><label class="flbl">Message Preview</label><div class="wa-preview" id="waPrev"></div></div>
+    <div class="fg"><label class="flbl">Custom message (blank = template)</label><textarea id="wa_c" style="min-height:55px" oninput="updMsg('wa')"></textarea></div>
+    <p style="font-size:10px;color:var(--t3);line-height:1.6">Opens WhatsApp Web / app with message pre-filled.</p>
+  </div>
+  <div class="mft">
+    <button class="btn ghost" onclick="closeWa()">Cancel</button>
+    <button class="btn primary" style="background:var(--green);border-color:var(--green);color:#000" onclick="sendWa()">Open WhatsApp ↗</button>
+  </div>
+</div>
+</div>
+
+<!-- EMAIL MODAL -->
+<div class="overlay" id="emOv" onclick="if(event.target.id==='emOv')closeEm()">
+<div class="modal sm">
+  <div class="mhd"><span class="mtitle" style="color:var(--purple)">✉ Email</span><button class="mcls" onclick="closeEm()">✕</button></div>
+  <div class="mbody">
+    <div class="fg" id="emCtcWrap"></div>
+    <div class="fg"><label class="flbl">Email Address</label><input type="email" id="em_to" placeholder="contact@restaurant.com" oninput="updMsg('em')"></div>
+    <div class="fg"><label class="flbl">Subject</label><input type="text" id="em_sub" placeholder="Subject line…"></div>
+    <div class="fg"><label class="flbl">Message Preview</label><div class="em-preview" id="emPrev"></div></div>
+    <div class="fg"><label class="flbl">Custom message (blank = template)</label><textarea id="em_c" style="min-height:55px" oninput="updMsg('em')"></textarea></div>
+    <p style="font-size:10px;color:var(--t3);line-height:1.6">Opens your default email client.</p>
+  </div>
+  <div class="mft">
+    <button class="btn ghost" onclick="closeEm()">Cancel</button>
+    <button class="btn primary" style="background:var(--purple);border-color:var(--purple)" onclick="sendEm()">Open Email Client ↗</button>
+  </div>
+</div>
+</div>
+
+<!-- SCRIPT PANEL -->
+<div class="spanel" id="spanel">
+  <div class="sp-hd"><span class="sp-title">📞 Call Script</span><button class="mcls" onclick="toggleScript()">✕</button></div>
+  <div class="sp-body">
+    <div class="step"><div class="step-n">Step 01 — Opening</div><div class="step-t">The hook (first 10 sec)</div><div class="step-b">"Hi, is this [name]? Great — I'm [your name] from <em>Pulra</em>, we run the POS at your restaurant. Do you have 2 minutes? I wanted to reach you before we open this to everyone."</div></div>
+    <div class="step"><div class="step-n">Step 02 — Setup</div><div class="step-t">Curiosity, not a pitch</div><div class="step-b">"We've added online ordering that feeds straight into your existing POS — same screen your staff uses. No new device, no training. And since you're already a customer, <em>you get first access and it's free right now.</em>"</div></div>
+    <div class="step"><div class="step-n">Step 03 — Ask</div><div class="step-t">Close for the meeting</div><div class="step-b">"I'd love to pop by and show you — 15 minutes max. <em>Would this week or next work?</em> Happy to come to you."</div></div>
+    <div class="step"><div class="step-n">Objection 01</div><div class="step-t">We use [other app] already</div><div class="obj"><div class="obj-t">They say: "We're on [delivery app], we're fine."</div><div class="obj-b">"This works <em>alongside</em> it — orders here go straight into your current system. It's a second channel you keep 100% of. Worth 15 min?"</div></div></div>
+    <div class="step"><div class="step-n">Objection 02</div><div class="step-t">Too busy</div><div class="obj"><div class="obj-t">They say: "Not a good time."</div><div class="obj-b">"Can I come early morning or after lunch rush? <em>Even 10 minutes is enough.</em>"</div></div></div>
+    <div class="step"><div class="step-n">Objection 03</div><div class="step-t">What's the catch?</div><div class="obj"><div class="obj-t">They say: "Why free?"</div><div class="obj-b">"Launch phase — we want our best customers on first. <em>Early partners get the best terms, locked in.</em>"</div></div></div>
+    <div class="step"><div class="step-n">Objection 04</div><div class="step-t">We don't do delivery</div><div class="obj"><div class="obj-t">They say: "We don't handle delivery."</div><div class="obj-b">"You don't have to — logistics are handled. <em>You just prepare the order like any other.</em>"</div></div></div>
+    <div class="step"><div class="step-n">Step 04 — Close</div><div class="step-t">Confirm the meeting</div><div class="step-b">"Perfect — I'll see you [day] at [time]. I'll send a message to confirm. <em>Looking forward to it.</em>"<br><br>→ Log the lead right after. Set a follow-up date.</div></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<script>
+
+// ═══════════════════════════════════════════════════════════
+// SUPABASE + AUTH + SYNC LAYER
+// ═══════════════════════════════════════════════════════════
+
+const CFG_KEY = 'pulra_cfg';
+const APP_VERSION = '2.0.0';
+const VERSION_URL = 'https://raw.githubusercontent.com/YOUR_USERNAME/pulra-leads/main/version.json';
+
+let sb = null;
+let currentUser = null; // { name: 'Navaal' } — just a display name, no auth
+let realtimeSub = null;
+
+// ── CONFIG ───────────────────────────────────────────────────
+function loadConfig() {
+  try { return JSON.parse(localStorage.getItem(CFG_KEY) || 'null'); } catch { return null; }
+}
+
+async function saveConfig() {
+  const url    = document.getElementById('cfg_url').value.trim().replace(/\/+$/, '');
+  const key    = document.getElementById('cfg_key').value.trim();
+  const name   = document.getElementById('cfg_name').value.trim() || 'Team';
+  const errEl  = document.getElementById('cfgErr');
+  const btn    = document.querySelector('#configScreen .btn.primary');
+  errEl.style.display = 'none';
+  if (!url || !key) { errEl.textContent = 'URL and Anon Key are required.'; errEl.style.display = 'block'; return; }
+  btn.textContent = 'Connecting…'; btn.disabled = true;
+  // Test connection — no auth, just test the table is reachable
+  const testClient = window.supabase.createClient(url, key);
+  const { error } = await testClient.from('leads').select('id').limit(1);
+  btn.textContent = 'Connect →'; btn.disabled = false;
+  if (error && error.code !== 'PGRST116') {
+    errEl.textContent = 'Connection failed: ' + (error.message || 'check URL and key');
+    errEl.style.display = 'block'; return;
+  }
+  localStorage.setItem(CFG_KEY, JSON.stringify({ url, key, name }));
+  currentUser = { name };
+  document.getElementById('configScreen').style.display = 'none';
+  initAndLoad();
+}
+
+function initSupabase(url, key) {
+  sb = window.supabase.createClient(url, key, {
+    auth: { persistSession: false }
+  });
+}
+
+// ── NOTIFICATION SETTINGS ─────────────────────────────────────
+const NOTIF_KEY = 'pulra_notif_v1';
+const NOTIF_DEFAULTS = {
+  token: '', chat: '',
+  new_lead: true, stage: true, fu_today: true, fu_over: true,
+  ticket: false, ticket_status: false, meeting: true, log: false,
+  closed: true, include_notes: false, include_who: true
+};
+
+function loadNotifSettings() {
+  try { return { ...NOTIF_DEFAULTS, ...JSON.parse(localStorage.getItem(NOTIF_KEY) || '{}') }; }
+  catch { return { ...NOTIF_DEFAULTS }; }
+}
+
+function openNotifPanel() {
+  const s = loadNotifSettings();
+  document.getElementById('np_token').value = s.token || '';
+  document.getElementById('np_chat').value  = s.chat  || '';
+  const keys = ['new_lead','stage','fu_today','fu_over','ticket','ticket_status','meeting','log','closed','include_notes','include_who'];
+  keys.forEach(k => { const el = document.getElementById('nt_'+k); if (el) el.checked = !!s[k]; });
+  document.getElementById('notifPanel').classList.add('open');
+}
+
+function closeNotifPanel() {
+  document.getElementById('notifPanel').classList.remove('open');
+}
+
+function saveNotifSettings() {
+  const keys = ['new_lead','stage','fu_today','fu_over','ticket','ticket_status','meeting','log','closed','include_notes','include_who'];
+  const s = {
+    token: document.getElementById('np_token').value.trim(),
+    chat:  document.getElementById('np_chat').value.trim(),
+  };
+  keys.forEach(k => { const el = document.getElementById('nt_'+k); if (el) s[k] = el.checked; });
+  localStorage.setItem(NOTIF_KEY, JSON.stringify(s));
+  closeNotifPanel();
+  toast('✓ Notification settings saved');
+}
+
+async function testTelegram() {
+  const token = document.getElementById('np_token').value.trim();
+  const chat  = document.getElementById('np_chat').value.trim();
+  if (!token || !chat) { toast('⚠ Enter token and chat ID first'); return; }
+  const btn = document.querySelector('.np-test-btn');
+  btn.textContent = 'Sending…'; btn.disabled = true;
+  const res = await sendTelegramMsg(token, chat, '✅ Pulra Lead Tracker — test notification. Connection working!');
+  btn.textContent = 'Send test message ↗'; btn.disabled = false;
+  toast(res ? '✓ Test message sent' : '⚠ Failed — check token and chat ID');
+}
+
+async function sendTelegramMsg(token, chat, text) {
+  if (!token || !chat) return false;
+  try {
+    const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: chat, text, parse_mode: 'HTML' })
+    });
+    const data = await res.json();
+    return data.ok;
+  } catch { return false; }
+}
+
+async function notify(triggerKey, text) {
+  const s = loadNotifSettings();
+  if (!s[triggerKey]) return;
+  if (!s.token || !s.chat) return;
+  const who = (s.include_who && currentUser?.name) ? `
+👤 ${currentUser.name}` : '';
+  sendTelegramMsg(s.token, s.chat, text + who);
+}
+
+// ── INIT ──────────────────────────────────────────────────────
+async function init() {
+  const cfg = loadConfig();
+  if (!cfg || !cfg.url || !cfg.key) {
+    document.getElementById('configScreen').style.display = 'flex';
+    return;
+  }
+  document.getElementById('configScreen').style.display = 'none';
+  currentUser = { name: cfg.name || 'Team' };
+  document.getElementById('userName').textContent = cfg.name || 'Team';
+  document.getElementById('userAvatar').textContent = (cfg.name || 'T').charAt(0).toUpperCase();
+  initAndLoad();
+}
+
+async function initAndLoad() {
+  const cfg = loadConfig();
+  initSupabase(cfg.url, cfg.key);
+  setSyncStatus('loading', 'loading…');
+  await loadFromSupabase();
+  setSyncStatus('ok', 'live');
+  setupRealtime();
+  checkReminders();
+  checkForUpdate();
+  // Schedule daily follow-up check
+  scheduleDailyCheck();
+}
+
+// ── SYNC STATUS ─────────────────────────────────────────────
+function setSyncStatus(state, label) {
+  const dot = document.getElementById('syncDot');
+  const lbl = document.getElementById('syncLbl');
+  if (!dot) return;
+  dot.className = 'sync-dot' + (state === 'loading' ? ' syncing' : state === 'err' ? ' err' : '');
+  if (lbl) lbl.textContent = label;
+}
+
+// ── LOAD ALL DATA ────────────────────────────────────────────
+async function loadFromSupabase() {
+  const { data: leadsData, error } = await sb.from('leads').select('*').order('created_at', { ascending: false });
+  if (error) { setSyncStatus('err', 'load failed'); console.error(error); return; }
+  // Load contacts, tickets, interactions in parallel
+  const leadIds = leadsData.map(l => l.id);
+  const [ctcsRes, ticksRes, logsRes] = await Promise.all([
+    sb.from('contacts').select('*').order('sort_order'),
+    sb.from('tickets').select('*').order('created_at', { ascending: false }),
+    sb.from('interactions').select('*').order('created_at', { ascending: false }),
+  ]);
+  // Map to our in-memory format
+  leads = leadsData.map(l => mapLead(l,
+    (ctcsRes.data||[]).filter(c => c.lead_id === l.id),
+    (ticksRes.data||[]).filter(t => t.lead_id === l.id),
+    (logsRes.data||[]).filter(i => i.lead_id === l.id)
+  ));
+  renderAll();
+}
+
+function mapLead(l, contacts, tickets, log) {
+  return {
+    id: l.id,
+    deal: l.deal,
+    loc: l.loc || '',
+    type: l.type || '',
+    branches: l.branches || '',
+    stage: l.stage || 'New',
+    priority: l.priority || 'Normal',
+    fuD: l.fu_date || '',
+    fuR: l.fu_required || false,
+    soft: l.soft || '',
+    del: l.del || '',
+    delMode: l.del_mode || 'none',
+    notes: l.notes || '',
+    lc: l.last_contact || '',
+    em: l.outreach_em || false,
+    wa: l.outreach_wa || false,
+    vb: l.outreach_vb || false,
+    cl: l.outreach_cl || false,
+    ip: l.outreach_ip || false,
+    createdAt: l.created_at,
+    updatedAt: l.updated_at,
+    createdBy: l.created_by,
+    contacts: contacts.map(c => ({
+      name: c.name||'', role: c.role||'', phone: c.phone||'',
+      email: c.email||'', tg: c.telegram||'', wa: c.whatsapp||''
+    })),
+    tickets: tickets.map(t => ({
+      id: t.id, type: t.type, status: t.status, title: t.title||'',
+      date: t.date||'', time: t.time||'', assigned: t.assigned_to||'',
+      priority: t.priority||'normal', notes: t.notes||''
+    })),
+    log: log.map(i => ({
+      id: i.id, type: i.type, text: i.text, date: i.created_at
+    })),
+  };
+}
+
+// ── SAVE LEAD ────────────────────────────────────────────────
+async function saveLeadToSupabase(data, editId) {
+  setSyncStatus('loading', 'saving…');
+  const row = {
+    deal: data.deal,
+    loc: data.loc || null,
+    type: data.type || null,
+    branches: data.branches || null,
+    stage: data.stage,
+    priority: data.priority,
+    fu_date: data.fuD || null,
+    fu_required: data.fuR,
+    soft: data.soft || null,
+    del: data.del || null,
+    del_mode: data.delMode,
+    notes: data.notes || null,
+    last_contact: data.lc || null,
+    outreach_em: data.em,
+    outreach_wa: data.wa,
+    outreach_vb: data.vb,
+    outreach_cl: data.cl,
+    outreach_ip: data.ip,
+  };
+  let leadId = editId;
+  if (editId) {
+    const prevLead = leads.find(x => x.id === editId);
+    const { error } = await sb.from('leads').update(row).eq('id', editId);
+    if (error) { setSyncStatus('err', 'save failed'); toast('⚠ Save failed: ' + error.message); return false; }
+    // Stage change notification
+    if (prevLead && prevLead.stage !== row.stage) {
+      const stageEmoji = {'New':'🆕','Contacted':'📞','Interested':'👀','Meeting Set':'📅','Negotiating':'🤝','Closed':'✅','Lost':'❌','No Response':'🔇','On Hold':'⏸'};
+      const e = stageEmoji[row.stage] || '◎';
+      notify(row.stage === 'Closed' || row.stage === 'Lost' ? 'closed' : 'stage',
+        `${e} <b>Stage Updated</b>\n<b>${row.deal}</b>\n${prevLead.stage} → <b>${row.stage}</b>`);
+    }
+  } else {
+    const { data: ins, error } = await sb.from('leads').insert(row).select().single();
+    if (error) { setSyncStatus('err', 'save failed'); toast('⚠ Save failed: ' + error.message); return false; }
+    leadId = ins.id;
+  }
+  // Save contacts (delete all then re-insert)
+  await sb.from('contacts').delete().eq('lead_id', leadId);
+  if (data.contacts && data.contacts.length) {
+    await sb.from('contacts').insert(data.contacts.map((c, i) => ({
+      lead_id: leadId, name: c.name||null, role: c.role||null,
+      phone: c.phone||null, email: c.email||null,
+      telegram: c.tg||null, whatsapp: c.wa||null, sort_order: i
+    })));
+  }
+  setSyncStatus('ok', 'saved');
+  return leadId;
+}
+
+async function deleteLeadFromSupabase(id) {
+  const { error } = await sb.from('leads').delete().eq('id', id);
+  if (error) { toast('⚠ Delete failed'); return false; }
+  return true;
+}
+
+// ── SAVE TICKET ──────────────────────────────────────────────
+async function saveTicketToSupabase(leadId, editTickId, data) {
+  const row = {
+    lead_id: leadId,
+    type: data.type, status: data.status,
+    title: data.title || null, date: data.date || null,
+    time: data.time || null, assigned_to: data.assigned || null,
+    priority: data.priority, notes: data.notes || null,
+  };
+  if (editTickId) {
+    const { error } = await sb.from('tickets').update(row).eq('id', editTickId);
+    if (error) { toast('⚠ Ticket save failed'); return false; }
+  } else {
+    const { error } = await sb.from('tickets').insert(row);
+    if (error) { toast('⚠ Ticket save failed'); return false; }
+  }
+  return true;
+}
+
+async function deleteTicketFromSupabase(tickId) {
+  await sb.from('tickets').delete().eq('id', tickId);
+}
+
+async function updateTicketStatusSupabase(tickId, status) {
+  await sb.from('tickets').update({ status }).eq('id', tickId);
+}
+
+// ── INTERACTION LOG ──────────────────────────────────────────
+async function saveInteractionToSupabase(leadId, type, text) {
+  const { error } = await sb.from('interactions').insert({
+    lead_id: leadId, type, text,
+  });
+  if (error) { toast('⚠ Log failed'); return false; }
+  // Update last_contact
+  await sb.from('leads').update({ last_contact: todayS() }).eq('id', leadId);
+  return true;
+}
+
+async function deleteInteractionFromSupabase(entryId) {
+  await sb.from('interactions').delete().eq('id', entryId);
+}
+
+// ── REALTIME ─────────────────────────────────────────────────
+function setupRealtime() {
+  if (realtimeSub) sb.removeChannel(realtimeSub);
+  realtimeSub = sb.channel('leads-rt')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'leads' }, () => {
+      setSyncStatus('loading', 'syncing…');
+      loadFromSupabase().then(() => setSyncStatus('ok', 'synced'));
+    })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'contacts' }, () => loadFromSupabase())
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'tickets' }, () => loadFromSupabase())
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'interactions' }, () => loadFromSupabase())
+    .subscribe((status) => {
+      if (status === 'SUBSCRIBED') setSyncStatus('ok', 'live');
+      if (status === 'CLOSED')     setSyncStatus('err', 'disconnected');
+      if (status === 'CHANNEL_ERROR') setSyncStatus('err', 'sync error');
+    });
+}
+
+// ── VERSION CHECK ────────────────────────────────────────────
+async function checkForUpdate() {
+  try {
+    const res = await fetch(VERSION_URL + '?t=' + Date.now());
+    const data = await res.json();
+    if (data.version && data.version !== APP_VERSION) {
+      document.getElementById('updateTxt').textContent =
+        'v' + data.version + ' available' + (data.notes ? ' — ' + data.notes : '');
+      document.getElementById('updateBanner').classList.add('show');
+    }
+  } catch { /* no update server yet */ }
+}
+
+function reloadForUpdate() { location.reload(true); }
+
+// ── SEEN FOLLOW-UPS (Supabase-backed) ───────────────────────
+function getSeenIds() {
+  try { return new Set(JSON.parse(localStorage.getItem('pulra_fu_seen')||'[]')); } catch { return new Set(); }
+}
+
+function markSeen(leadId) {
+  const s = getSeenIds(); s.add(leadId);
+  localStorage.setItem('pulra_fu_seen', JSON.stringify([...s]));
+}
+
+// ── INIT ─────────────────────────────────────────────────────
+async function init() {
+  const cfg = loadConfig();
+  if (!cfg || !cfg.url || !cfg.key) {
+    document.getElementById('configScreen').style.display = 'flex';
+    return;
+  }
+  document.getElementById('configScreen').style.display = 'none';
+  currentUser = { name: cfg.name || 'Team' };
+  const nameEl = document.getElementById('userName');
+  const avatarEl = document.getElementById('userAvatar');
+  if (nameEl) nameEl.textContent = cfg.name || 'Team';
+  if (avatarEl) avatarEl.textContent = (cfg.name || 'T').charAt(0).toUpperCase();
+  await initAndLoad();
+}
+
+// ─────────────────────────────────────────────────────────────
+
+
+const KEY='pulra_v4';
+let leads=[],editId=null,tickLeadId=null,editTickId=null,msgLeadId=null;
+let ctcs=[],fuDate='',delMode='none';
+
+/* ── MULTI-LOCATION ── */
+let selectedLocs = [];
+function toggleLoc(el) {
+  const val = el.dataset.val;
+  const idx = selectedLocs.indexOf(val);
+  if (idx > -1) { selectedLocs.splice(idx,1); el.classList.remove('active'); }
+  else { selectedLocs.push(val); el.classList.add('active'); }
+  syncLocField();
+}
+function addCustomLoc() {
+  const w = document.getElementById('customLocWrap');
+  w.style.display = 'flex';
+  document.getElementById('customLocInput').focus();
+}
+function confirmCustomLoc() {
+  const inp = document.getElementById('customLocInput');
+  const val = inp.value.trim();
+  if (!val) return;
+  if (!selectedLocs.includes(val)) {
+    selectedLocs.push(val);
+    // Add pill dynamically
+    const pills = document.getElementById('locPills');
+    const pill = document.createElement('div');
+    pill.className = 'loc-pill active';
+    pill.dataset.val = val;
+    pill.textContent = val;
+    pill.onclick = function(){ toggleLoc(this); if(!this.classList.contains('active')){this.remove();selectedLocs=selectedLocs.filter(x=>x!==val)} };
+    pills.insertBefore(pill, pills.querySelector('.loc-custom-btn'));
+  }
+  inp.value = '';
+  document.getElementById('customLocWrap').style.display = 'none';
+  syncLocField();
+}
+function syncLocField() {
+  document.getElementById('f_loc').value = selectedLocs.join(', ');
+}
+function loadLocState(val) {
+  selectedLocs = val ? val.split(', ').map(s=>s.trim()).filter(Boolean) : [];
+  // Reset standard pills
+  document.querySelectorAll('#locPills .loc-pill:not(.loc-custom-btn)').forEach(p => {
+    if (p.dataset.val) p.classList.toggle('active', selectedLocs.includes(p.dataset.val));
+  });
+  // Remove any previously added custom pills (non-standard)
+  document.querySelectorAll('#locPills .loc-pill.loc-custom').forEach(p => p.remove());
+  const standard = ['Male','Hulhumale','Villimale'];
+  // Add custom pills for non-standard values
+  const pills = document.getElementById('locPills');
+  selectedLocs.filter(v => !standard.includes(v)).forEach(v => {
+    const exists = [...pills.querySelectorAll('.loc-pill')].some(p => p.dataset.val === v);
+    if (!exists) {
+      const pill = document.createElement('div');
+      pill.className = 'loc-pill active loc-custom';
+      pill.dataset.val = v;
+      pill.textContent = v;
+      pill.onclick = function(){ toggleLoc(this); if(!this.classList.contains('active'))this.remove(); };
+      pills.insertBefore(pill, pills.querySelector('.loc-custom-btn'));
+    }
+  });
+  syncLocField();
+  document.getElementById('customLocWrap').style.display = 'none';
+}
+function getLocValue() {
+  return selectedLocs.join(', ');
+}
+
+/* ── TYPE DROPDOWN ── */
+function onTypeChange(){
+  const sel=document.getElementById('f_type_sel').value;
+  const inp=document.getElementById('f_type');
+  if(sel==='custom'){inp.style.display='block';inp.focus();inp.value=''}
+  else{inp.style.display='none';inp.value=sel}
+}
+function loadTypeState(val){
+  const sel=document.getElementById('f_type_sel');
+  const inp=document.getElementById('f_type');
+  // Try to match against known options
+  const knownOpts=['Restaurant','Café','Fast Food','Fine Dining','Casual Dining','Buffet','Food Court','Bakery','Ice Cream & Desserts','Juice Bar','Tea House','Pizza','Grill & BBQ','Seafood','Asian Cuisine','Indian Cuisine','Middle Eastern','Supermarket','Mini Mart','Grocery Store','Convenience Store','Pharmacy','Bakery & Sweets Shop','Hotel Restaurant','Resort','Guesthouse'];
+  if(!val){sel.value='';inp.style.display='none';inp.value=''}
+  else if(knownOpts.includes(val)){sel.value=val;inp.style.display='none';inp.value=val}
+  else{sel.value='custom';inp.style.display='block';inp.value=val}
+}
+function getTypeValue(){
+  const sel=document.getElementById('f_type_sel').value;
+  if(sel==='custom')return document.getElementById('f_type').value.trim();
+  return document.getElementById('f_type').value.trim()||sel;
+}
+
+function load(){/* data loaded from Supabase via loadFromSupabase() */}
+function save(){
+  /* In Supabase mode, individual operations call saveLeadToSupabase etc.
+     This stub keeps compatibility with any legacy callers. */
+}
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2);
+const todayS=()=>new Date().toISOString().split('T')[0];
+const diffD=d=>d?Math.round((new Date(d+' 00:00:00')-new Date(todayS()+' 00:00:00'))/86400000):null;
+const fmtD=d=>{if(!d)return'—';const x=new Date(d+' 00:00:00');return x.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})};
+const fmtDT=(d,t)=>{let s=fmtD(d);if(t)s+=' '+t;return s};
+const esc=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const scls=s=>({'New':'s-new','Contacted':'s-contacted','Interested':'s-interested','Meeting Set':'s-meeting','Negotiating':'s-negotiating','Closed':'s-closed','Lost':'s-lost','No Response':'s-noresponse','On Hold':'s-onhold'})[s]||'s-new';
+const tIcon={'meeting':'📅','training':'🎓','menu':'📋','onboarding':'🚀','support':'🛠','followup':'📞','demo':'💻','contract':'📝','other':'◎'};
+const tsClass={'pending':'ts-pending','scheduled':'ts-scheduled','inprogress':'ts-inprogress','completed':'ts-completed','cancelled':'ts-cancelled'};
+const tsLabel={'pending':'Pending','scheduled':'Scheduled','inprogress':'In Progress','completed':'Completed','cancelled':'Cancelled'};
+
+function toast(m,ms=2400){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),ms)}
+
+/* ── FOLLOW-UP PRESETS ── */
+function setFuPreset(days,label){
+  const d=new Date();d.setDate(d.getDate()+days);
+  fuDate=d.toISOString().split('T')[0];
+  document.getElementById('f_fuD').value=fuDate;
+  document.getElementById('fuCustomRow').style.display='none';
+  document.querySelectorAll('.fu-opt').forEach(e=>e.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+  document.getElementById('fuDateDisplay').textContent='↻ '+label+' · '+fmtD(fuDate);
+  document.getElementById('f_fuR').checked=true;
+}
+function toggleFuCustom(){
+  const r=document.getElementById('fuCustomRow');
+  const showing=r.style.display!=='none';
+  r.style.display=showing?'none':'flex';
+  document.querySelectorAll('.fu-opt').forEach(e=>e.classList.remove('active'));
+  if(!showing)document.getElementById('fuCustomOpt').classList.add('active');
+}
+function onFuDateChange(){
+  fuDate=document.getElementById('f_fuD').value;
+  if(fuDate){
+    document.getElementById('fuDateDisplay').textContent='↻ Custom · '+fmtD(fuDate);
+    document.getElementById('f_fuR').checked=true;
+  }else{
+    document.getElementById('fuDateDisplay').textContent='';
+  }
+}
+function loadFuState(l){
+  fuDate=l.fuD||'';
+  document.getElementById('f_fuR').checked=!!l.fuR;
+  document.getElementById('f_fuD').value=fuDate;
+  document.querySelectorAll('.fu-opt').forEach(e=>e.classList.remove('active'));
+  document.getElementById('fuCustomRow').style.display=fuDate?'flex':'none';
+  if(fuDate){
+    document.getElementById('fuCustomOpt').classList.add('active');
+    document.getElementById('fuDateDisplay').textContent='↻ '+fmtD(fuDate);
+  }else{
+    document.getElementById('fuDateDisplay').textContent='';
+  }
+}
+function resetFuState(){
+  fuDate='';
+  document.getElementById('f_fuR').checked=false;
+  document.getElementById('f_fuD').value='';
+  document.getElementById('fuCustomRow').style.display='none';
+  document.querySelectorAll('.fu-opt').forEach(e=>e.classList.remove('active'));
+  document.getElementById('fuDateDisplay').textContent='';
+}
+
+/* ── DELIVERY MODE ── */
+function setDelMode(m){
+  delMode=m;
+  document.getElementById('f_delMode').value=m;
+  ['none','ewity','self'].forEach(k=>{
+    const el=document.getElementById('dm_'+k);
+    el.className='del-opt'+(m===k?' active-'+k:'');
+  });
+}
+function loadDelMode(m){
+  delMode=m||'none';
+  setDelMode(delMode);
+}
+
+/* ── CONTACTS ── */
+function renderCtcList(){
+  const w=document.getElementById('ctcList');
+  if(!ctcs.length){w.innerHTML=`<button class="badd" onclick="addCtc()">＋ Add a contact person</button>`;return}
+  w.innerHTML=ctcs.map((c,i)=>`
+    <div class="ctc-card">
+      <div class="ctc-hd"><span class="ctc-lbl">Contact ${i+1}</span><button class="brm" onclick="rmCtc(${i})">✕</button></div>
+      <div class="frow">
+        <div class="fg"><label class="flbl">Full Name</label><input type="text" value="${esc(c.name)}" oninput="updCtc(${i},'name',this.value)" placeholder="Owner, manager…"></div>
+        <div class="fg"><label class="flbl">Role / Title</label><input type="text" value="${esc(c.role)}" oninput="updCtc(${i},'role',this.value)" placeholder="Owner, GM…"></div>
+      </div>
+      <div class="frow">
+        <div class="fg"><label class="flbl">Phone / Viber</label><input type="tel" value="${esc(c.phone)}" oninput="updCtc(${i},'phone',this.value)" placeholder="+960 …"></div>
+        <div class="fg"><label class="flbl">Email</label><input type="email" value="${esc(c.email)}" oninput="updCtc(${i},'email',this.value)" placeholder="email@…"></div>
+      </div>
+      <div class="frow">
+        <div class="fg"><label class="flbl">Telegram</label><input type="text" value="${esc(c.tg)}" oninput="updCtc(${i},'tg',this.value)" placeholder="@username"></div>
+        <div class="fg"><label class="flbl">WhatsApp</label><input type="tel" value="${esc(c.wa)}" oninput="updCtc(${i},'wa',this.value)" placeholder="+960 …"></div>
+      </div>
+    </div>`).join('')+`<button class="badd" onclick="addCtc()">＋ Add another contact</button>`;
+}
+function addCtc(){ctcs.push({name:'',role:'',phone:'',email:'',tg:'',wa:''});renderCtcList()}
+function rmCtc(i){ctcs.splice(i,1);renderCtcList()}
+function updCtc(i,f,v){ctcs[i][f]=v}
+
+/* ── LEAD MODAL ── */
+function openLeadModal(id=null){
+  editId=id;
+  document.getElementById('lmTitle').textContent=id?'Edit Lead':'New Lead';
+  const sf=['deal','loc','type','branches','soft','del','notes','lc'];
+  const ch=['em','wa','vb','cl','ip'];
+  if(id){
+    const l=leads.find(x=>x.id===id);if(!l)return;
+    sf.forEach(f=>{const e=document.getElementById('f_'+f);if(e)e.value=l[f]||''});
+    document.getElementById('f_stage').value=l.stage||'New';
+    document.getElementById('f_pri').value=l.priority||'Normal';
+    ch.forEach(f=>{const e=document.getElementById('f_'+f);if(e)e.checked=!!l[f]});
+    ctcs=JSON.parse(JSON.stringify(l.contacts||[]));
+    loadFuState(l);loadDelMode(l.delMode);loadLocState(l.loc);loadTypeState(l.type);
+  }else{
+    sf.forEach(f=>{const e=document.getElementById('f_'+f);if(e)e.value=''});
+    document.getElementById('f_stage').value='New';document.getElementById('f_pri').value='Normal';
+    ch.forEach(f=>{const e=document.getElementById('f_'+f);if(e)e.checked=false});
+    document.getElementById('f_lc').value=todayS();
+    ctcs=[];selectedLocs=[];resetFuState();loadDelMode('none');loadLocState('');loadTypeState('');
+  }
+  renderCtcList();
+  document.getElementById('leadOv').classList.add('open');
+  requestAnimationFrame(() => { _leadSnap = snapLeadForm(); });
+}
+function closeLeadModal(){document.getElementById('leadOv').classList.remove('open');editId=null;ctcs=[];_leadSnap=null;}
+
+function saveLead(){
+  const deal=document.getElementById('f_deal').value.trim();
+  if(!deal){toast('⚠ Business name is required');return}
+  fuDate=document.getElementById('f_fuD').value;
+  const d={
+    id:editId||uid(),deal,
+    loc:getLocValue(),
+    type:getTypeValue(),
+    branches:document.getElementById('f_branches').value.trim(),
+    stage:document.getElementById('f_stage').value,
+    priority:document.getElementById('f_pri').value,
+    fuD:fuDate,fuR:document.getElementById('f_fuR').checked,
+    soft:document.getElementById('f_soft').value.trim(),
+    del:document.getElementById('f_del').value.trim(),
+    delMode:document.getElementById('f_delMode').value,
+    notes:document.getElementById('f_notes').value.trim(),
+    lc:document.getElementById('f_lc').value,
+    em:document.getElementById('f_em').checked,
+    wa:document.getElementById('f_wa').checked,
+    vb:document.getElementById('f_vb').checked,
+    cl:document.getElementById('f_cl').checked,
+    ip:document.getElementById('f_ip').checked,
+    contacts:JSON.parse(JSON.stringify(ctcs)),
+    tickets:editId?(leads.find(x=>x.id===editId)?.tickets||[]):[],
+    log:editId?(leads.find(x=>x.id===editId)?.log||[]):[],
+    updatedAt:new Date().toISOString()
+  };
+  saveLeadToSupabase(d, editId).then(newId => {
+    if (!newId) return;
+    closeLeadModal();
+    toast(editId ? '✓ Lead updated' : '✓ Lead added');
+    const cfg = loadConfig();
+    const s = loadNotifSettings();
+    if (!editId) {
+      let msg = `🎯 <b>New Lead Added</b>\n<b>${d.deal}</b>`;
+      if (d.type) msg += `\nType: ${d.type}`;
+      if (d.loc)  msg += `\nLocation: ${d.loc}`;
+      msg += `\nStage: ${d.stage}`;
+      if (d.priority !== 'Normal') msg += `\nPriority: ${d.priority}`;
+      if (s.include_notes && d.notes) msg += `\n"${d.notes.slice(0,80)}…"`;
+      notify('new_lead', msg);
+    }
+    // Optimistic local update so UI feels instant
+    if (editId) {
+      const i = leads.findIndex(x => x.id === editId);
+      if (i > -1) leads[i] = { ...d, id: editId };
+    } else {
+      leads.unshift({ ...d, id: newId });
+    }
+    renderAll();
+  });
+}
+function delLead(id){
+  if(!confirm('Delete this lead and all its tickets?'))return;
+  deleteLeadFromSupabase(id).then(ok => {
+    if (!ok) return;
+    leads = leads.filter(l => l.id !== id);
+    renderAll(); toast('Lead deleted');
+  });
+}
+function clearAll(){
+  if(!confirm('Delete ALL leads? This cannot be undone.'))return;
+  leads=[];save();renderAll();toast('All leads cleared');
+}
+
+/* ── TICKET MODAL ── */
+function openTicketModal(leadId,ticketId=null){
+  tickLeadId=leadId;editTickId=ticketId;
+  document.getElementById('tmTitle').textContent=ticketId?'Edit Ticket':'New Ticket';
+  if(ticketId){
+    const l=leads.find(x=>x.id===leadId);
+    const t=l?.tickets?.find(x=>x.id===ticketId);
+    if(!t)return;
+    document.getElementById('t_type').value=t.type||'meeting';
+    document.getElementById('t_status').value=t.status||'pending';
+    document.getElementById('t_title').value=t.title||'';
+    document.getElementById('t_date').value=t.date||'';
+    document.getElementById('t_time').value=t.time||'';
+    document.getElementById('t_assigned').value=t.assigned||'';
+    document.getElementById('t_pri').value=t.priority||'normal';
+    document.getElementById('t_notes').value=t.notes||'';
+    document.getElementById('tkDateDisplay').textContent='';
+    if(t.date)updateTicketDateDisplay();
+  }else{
+    document.getElementById('t_type').value='meeting';
+    document.getElementById('t_status').value='pending';
+    ['t_title','t_date','t_time','t_assigned','t_notes'].forEach(f=>document.getElementById(f).value='');
+    document.getElementById('t_pri').value='normal';
+    document.querySelectorAll('.tk-opt').forEach(e=>e.classList.remove('active'));
+    document.getElementById('tkDateDisplay').textContent='';
+  }
+  onTicketTypeChange();
+  document.getElementById('tickOv').classList.add('open');
+  requestAnimationFrame(() => { _tickSnap = snapTicketForm(); });
+}
+function closeTicketModal(){document.getElementById('tickOv').classList.remove('open');tickLeadId=null;editTickId=null;_tickSnap=null;}
+
+function onTicketTypeChange(){
+  const t=document.getElementById('t_type').value;
+  const lbl=document.getElementById('t_dateLbl');
+  if(t==='meeting'||t==='demo')lbl.textContent='Meeting Date';
+  else if(t==='training')lbl.textContent='Training Date';
+  else if(t==='followup')lbl.textContent='Call Date';
+  else lbl.textContent='Date';
+}
+
+function saveTicket(){
+  const l=leads.find(x=>x.id===tickLeadId);if(!l)return;
+  if(!l.tickets)l.tickets=[];
+  const d={
+    id:editTickId||uid(),
+    type:document.getElementById('t_type').value,
+    status:document.getElementById('t_status').value,
+    title:document.getElementById('t_title').value.trim(),
+    date:document.getElementById('t_date').value,
+    time:document.getElementById('t_time').value,
+    assigned:document.getElementById('t_assigned').value.trim(),
+    priority:document.getElementById('t_pri').value,
+    notes:document.getElementById('t_notes').value.trim(),
+    updatedAt:new Date().toISOString()
+  };
+  saveTicketToSupabase(tickLeadId, editTickId, d).then(ok => {
+    if (!ok) return;
+    closeTicketModal();
+    if (drawerLeadId === tickLeadId) renderDrawer();
+    toast(editTickId ? '✓ Ticket updated' : '✓ Ticket added');
+    if (!editTickId) {
+      const typeLabel = {meeting:'Meeting',training:'Training',menu:'Menu Update',onboarding:'Onboarding',support:'Support',followup:'Follow-up Call',demo:'Demo',contract:'Contract',installation:'Installation',review:'Review',other:'Other'};
+      const tl = leads.find(x => x.id === tickLeadId);
+      const tname = tl ? tl.deal : '';
+      const isM = d.type === 'meeting' && d.date;
+      notify(isM ? 'meeting' : 'ticket',
+        `${isM ? '📅' : '🎫'} <b>${isM ? 'Meeting Scheduled' : 'New Ticket'}</b>\n${d.title || typeLabel[d.type] || d.type}${tname ? '\nDeal: ' + tname : ''}${d.date ? '\nDate: ' + d.date + (d.time ? ' ' + d.time : '') : ''}${d.assigned ? '\nAssigned: ' + d.assigned : ''}`
+      );
+    }
+  });
+}
+function delTicket(leadId,tickId){
+  const l=leads.find(x=>x.id===leadId);if(!l)return;
+  deleteTicketFromSupabase(tickId).then(()=>{
+    l.tickets=(l.tickets||[]).filter(t=>t.id!==tickId);
+    renderAll();toast('Ticket deleted');
+  });
+}
+function cycleTicketStatus(leadId,tickId){
+  const l=leads.find(x=>x.id===leadId);if(!l)return;
+  const t=(l.tickets||[]).find(x=>x.id===tickId);if(!t)return;
+  const cycle=['pending','scheduled','inprogress','completed','cancelled'];
+  const i=cycle.indexOf(t.status);t.status=cycle[(i+1)%cycle.length];
+  updateTicketStatusSupabase(tickId, t.status);
+  const tl2 = leads.find(x => x.id === leadId);
+  const statusEmoji = {pending:'⏳',scheduled:'📅',inprogress:'🔄',completed:'✅',cancelled:'❌'};
+  notify('ticket_status', `${statusEmoji[t.status]||'◎'} <b>Ticket Updated</b>\n${t.title||t.type}${tl2?' — '+tl2.deal:''}\nStatus: <b>${tsLabel[t.status]}</b>`);
+  renderAll();toast('Status → '+tsLabel[t.status]);
+}
+
+/* ── MESSAGING HELPERS ── */
+function buildCtcPicker(leadId,field,selFn){
+  const l=leads.find(x=>x.id===leadId);
+  const cs=l?.contacts||[];
+  if(!cs.length)return'';
+  return'<label class="flbl" style="display:block;margin-bottom:6px">Select Contact</label>'+
+    '<div class="ctc-sel-wrap">'+
+    cs.map((c,i)=>`<div class="ctc-opt ${i===0?'sel':''}" onclick="${selFn}(this,'${esc(c[field]||'')}')">
+      <div><div class="ctc-opt-n">${esc(c.name||'Contact '+(i+1))}</div><div class="ctc-opt-h">${esc(c[field]||'Not set')}</div></div>
+    </div>`).join('')+'</div>';
+}
+function buildMsg(leadId,type){
+  const l=leads.find(x=>x.id===leadId);
+  const name=l?.contacts?.[0]?.name||l?.deal||'[Name]';
+  const deal=l?.deal||'[Restaurant]';
+  if(type==='wa'||type==='tg'){
+    return `Hi ${name},\n\nI'm reaching out from Pulra — we run the POS system at ${deal}. We've just launched online ordering that plugs directly into your existing system.\n\nOrders come straight into your POS — no new devices, no extra work for your team. As an existing customer, you get first access, completely free right now.\n\nWould you have 15 minutes this week? Happy to come by.`;
+  }else{
+    return `Hi ${name},\n\nHope you're doing well. I'm reaching out from Pulra regarding ${deal}.\n\nWe've recently launched an online ordering feature that integrates directly with your existing POS system — orders flow straight through your current setup with no new hardware and no changes to your workflow.\n\nAs one of our valued customers, you've been selected for early access, and it's completely free during our launch phase.\n\nI'd love to arrange a brief 15-minute walkthrough at your convenience.\n\nBest regards,\n[Your Name]\nPulra`;
+  }
+}
+
+/* TELEGRAM */
+let tgLeadId=null;
+function openTg(id){
+  tgLeadId=id;msgLeadId=id;
+  document.getElementById('tgCtcWrap').innerHTML=buildCtcPicker(id,'tg','selTgCtc');
+  const l=leads.find(x=>x.id===id);
+  document.getElementById('tg_h').value=(l?.contacts?.[0]?.tg||'').replace('@','');
+  document.getElementById('tg_c').value='';
+  updMsg('tg');document.getElementById('tgOv').classList.add('open');
+}
+function selTgCtc(el,v){document.querySelectorAll('#tgCtcWrap .ctc-opt').forEach(e=>e.classList.remove('sel'));el.classList.add('sel');document.getElementById('tg_h').value=v.replace('@','');updMsg('tg')}
+function updMsg(type){
+  const custom=document.getElementById(type+'_c').value.trim();
+  const id=type==='tg'?tgLeadId:type==='wa'?waLeadId:emLeadId;
+  document.getElementById(type+'Prev').textContent=custom||buildMsg(id,type);
+}
+function sendTg(){
+  const h=document.getElementById('tg_h').value.trim().replace('@','');
+  if(!h){toast('⚠ Enter a Telegram username');return}
+  window.open('https://t.me/'+h+'?text='+encodeURIComponent(document.getElementById('tgPrev').textContent),'_blank');
+  markContacted(tgLeadId);closeTg();toast('✓ Telegram opened');
+}
+function closeTg(){document.getElementById('tgOv').classList.remove('open');tgLeadId=null}
+
+/* WHATSAPP */
+let waLeadId=null;
+function openWa(id){
+  waLeadId=id;msgLeadId=id;
+  document.getElementById('waCtcWrap').innerHTML=buildCtcPicker(id,'wa','selWaCtc');
+  const l=leads.find(x=>x.id===id);
+  document.getElementById('wa_ph').value=l?.contacts?.[0]?.wa||l?.contacts?.[0]?.phone||'';
+  document.getElementById('wa_c').value='';
+  updMsg('wa');document.getElementById('waOv').classList.add('open');
+}
+function selWaCtc(el,v){document.querySelectorAll('#waCtcWrap .ctc-opt').forEach(e=>e.classList.remove('sel'));el.classList.add('sel');document.getElementById('wa_ph').value=v;updMsg('wa')}
+function sendWa(){
+  let ph=document.getElementById('wa_ph').value.trim().replace(/\D/g,'');
+  if(!ph){toast('⚠ Enter a phone number');return}
+  window.open('https://wa.me/'+ph+'?text='+encodeURIComponent(document.getElementById('waPrev').textContent),'_blank');
+  markContacted(waLeadId);closeWa();toast('✓ WhatsApp opened');
+}
+function closeWa(){document.getElementById('waOv').classList.remove('open');waLeadId=null}
+
+/* EMAIL */
+let emLeadId=null;
+function openEm(id){
+  emLeadId=id;msgLeadId=id;
+  document.getElementById('emCtcWrap').innerHTML=buildCtcPicker(id,'email','selEmCtc');
+  const l=leads.find(x=>x.id===id);
+  document.getElementById('em_to').value=l?.contacts?.[0]?.email||'';
+  document.getElementById('em_sub').value='Pulra Online Ordering — Early Access for '+( l?.deal||'your restaurant');
+  document.getElementById('em_c').value='';
+  updMsg('em');document.getElementById('emOv').classList.add('open');
+}
+function selEmCtc(el,v){document.querySelectorAll('#emCtcWrap .ctc-opt').forEach(e=>e.classList.remove('sel'));el.classList.add('sel');document.getElementById('em_to').value=v;updMsg('em')}
+function sendEm(){
+  const to=document.getElementById('em_to').value.trim();
+  if(!to){toast('⚠ Enter an email address');return}
+  const sub=encodeURIComponent(document.getElementById('em_sub').value||'Pulra Online Ordering');
+  const body=encodeURIComponent(document.getElementById('emPrev').textContent);
+  window.open('mailto:'+to+'?subject='+sub+'&body='+body,'_self');
+  markContacted(emLeadId);closeEm();toast('✓ Email client opened');
+}
+function closeEm(){document.getElementById('emOv').classList.remove('open');emLeadId=null}
+
+function markContacted(id){
+  const l=leads.find(x=>x.id===id);if(l){l.lc=todayS();save();renderAll()}
+}
+
+/* ── REMINDERS ── */
+/* ── FOLLOW-UP PANEL ── */
+const SEEN_KEY = 'pulra_fu_seen';
+let fuPanelOpen = false;
+let fuTabActive = 'all';
+
+// seenIds: set of lead IDs the user has "attended" (dismissed notification dot)
+function getSeenIds() {
+  try { return new Set(JSON.parse(localStorage.getItem(SEEN_KEY) || '[]')); } catch { return new Set(); }
+}
+function markSeen(leadId) {
+  const s = getSeenIds(); s.add(leadId);
+  localStorage.setItem(SEEN_KEY, JSON.stringify([...s]));
+}
+function clearAllSeen(ids) {
+  // remove ids that no longer have pending follow-ups
+  const s = getSeenIds();
+  ids.forEach(id => s.delete(id));
+  localStorage.setItem(SEEN_KEY, JSON.stringify([...s]));
+}
+
+function getFuLeads() {
+  return leads.filter(l => l.fuR && l.fuD).map(l => ({
+    ...l,
+    _dd: diffD(l.fuD),
+    _cat: diffD(l.fuD) < 0 ? 'over' : diffD(l.fuD) === 0 ? 'today' : 'up'
+  })).sort((a,b) => a._dd - b._dd);
+}
+
+function checkReminders() {
+  const fuLeads = getFuLeads();
+  const ov = fuLeads.filter(l => l._cat === 'over');
+  const td = fuLeads.filter(l => l._cat === 'today');
+  const bar = document.getElementById('remBar');
+  const txt = document.getElementById('remTxt');
+  const badge = document.getElementById('remBadge');
+  const chevron = document.getElementById('remChevron');
+
+  // Count unseen
+  const seen = getSeenIds();
+  const unseen = fuLeads.filter(l => !seen.has(l.id) && (l._cat === 'over' || l._cat === 'today'));
+
+  const total = ov.length + td.length;
+  if (total > 0) {
+    let parts = [];
+    if (ov.length) parts.push(ov.length + ' overdue');
+    if (td.length) parts.push(td.length + ' due today');
+    txt.textContent = parts.join(' · ');
+    badge.textContent = total;
+    badge.style.display = unseen.length > 0 ? 'flex' : 'none';
+    bar.classList.add('show');
+    chevron.textContent = fuPanelOpen ? '▴' : '▾';
+  } else {
+    bar.classList.remove('show');
+    fuPanelOpen = false;
+  }
+
+  // auto-clean seen IDs for leads that no longer have due followups
+  const activeIds = new Set(fuLeads.map(l => l.id));
+  const toClean = [...seen].filter(id => !activeIds.has(id));
+  if (toClean.length) clearAllSeen(toClean);
+
+  if (fuPanelOpen) renderFuList();
+}
+
+function toggleFuPanel() {
+  fuPanelOpen ? closeFuPanel() : openFuPanel();
+}
+
+function openFuPanel() {
+  fuPanelOpen = true;
+  document.getElementById('fuPanel').classList.add('open');
+  document.getElementById('fuPanelOverlay').classList.add('open');
+  document.getElementById('remChevron').textContent = '▴';
+  renderFuPanel();
+}
+
+function closeFuPanel() {
+  fuPanelOpen = false;
+  document.getElementById('fuPanel').classList.remove('open');
+  document.getElementById('fuPanelOverlay').classList.remove('open');
+  document.getElementById('remChevron').textContent = '▾';
+}
+
+function switchFuTab(tab) {
+  fuTabActive = tab;
+  document.querySelectorAll('.fu-tab').forEach(el => el.classList.remove('active'));
+  document.getElementById('futab-'+tab).classList.add('active');
+  renderFuList();
+}
+
+function renderFuPanel() {
+  const fuLeads = getFuLeads();
+  const relevant = fuLeads.filter(l => l._cat === 'over' || l._cat === 'today');
+  document.getElementById('fuPanelCount').textContent =
+    relevant.length + ' need' + (relevant.length===1?'s':'') + ' attention';
+  renderFuList();
+}
+
+function renderFuList() {
+  const fuLeads = getFuLeads();
+  const seen = getSeenIds();
+  let filtered = fuLeads;
+  if (fuTabActive === 'over')  filtered = fuLeads.filter(l => l._cat === 'over');
+  if (fuTabActive === 'today') filtered = fuLeads.filter(l => l._cat === 'today');
+  if (fuTabActive === 'up')    filtered = fuLeads.filter(l => l._cat === 'up');
+
+  const list = document.getElementById('fuList');
+  if (!filtered.length) {
+    list.innerHTML = '<div class="fu-empty"><div class="fu-empty-ico">✓</div><span>Nothing in this category</span></div>';
+    return;
+  }
+
+  list.innerHTML = filtered.map(l => {
+    const dd = l._dd;
+    const catCls = l._cat;
+    const unseen = !seen.has(l.id) && (l._cat === 'over' || l._cat === 'today');
+    let dateLabel = '';
+    if (dd < 0)     dateLabel = 'Overdue by ' + Math.abs(dd) + ' day' + (Math.abs(dd)===1?'':'s');
+    else if (dd===0) dateLabel = 'Due today';
+    else             dateLabel = 'In ' + dd + ' day' + (dd===1?'':'s') + ' · ' + fmtD(l.fuD);
+    const locs = l.loc ? l.loc.split(', ').filter(Boolean).slice(0,2).join(', ') : '';
+    const meta = [l.type, locs].filter(Boolean).join(' · ');
+
+    return `<div class="fu-item ${unseen?'unseen':''}" onclick="goToLead('${l.id}')">
+      <div class="fu-item-dot ${catCls}"></div>
+      <div class="fu-item-body">
+        <div class="fu-item-name">${esc(l.deal||'Unnamed')}</div>
+        <div class="fu-item-meta">
+          ${meta?`<span>${esc(meta)}</span>`:''}
+          <span class="fu-item-stage">${esc(l.stage)}</span>
+          ${l.notes?`<span style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-style:italic">${esc(l.notes.slice(0,60))}${l.notes.length>60?'…':''}</span>`:''}
+        </div>
+      </div>
+      <span class="fu-item-date ${catCls}">${dateLabel}</span>
+      ${unseen ? `<button class="fu-dismiss" onclick="dismissFu(event,'${l.id}')">✓ Done</button>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function goToLead(leadId) {
+  closeFuPanel();
+  // Find card and scroll to it
+  setTimeout(() => {
+    const card = document.querySelector('[data-id="' + leadId + '"]');
+    if (card) {
+      card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      // pulse animation
+      card.style.transition = 'box-shadow 0.3s';
+      card.style.boxShadow = '0 0 0 2px var(--accent)';
+      setTimeout(() => { card.style.boxShadow = ''; }, 1800);
+    }
+    markSeen(leadId);
+    checkReminders();
+  }, 300);
+}
+
+function dismissFu(e, leadId) {
+  e.stopPropagation();
+  markSeen(leadId);
+  renderFuList();
+  checkReminders();
+  toast('✓ Follow-up marked as reviewed');
+}
+
+function scrollToOverdue() { openFuPanel(); }
+
+/* ── STATS ── */
+function renderStats(){
+  const n=leads.length,ac=leads.filter(l=>!['Closed','Lost','No Response'].includes(l.stage)).length,
+    cl=leads.filter(l=>l.stage==='Closed').length,mt=leads.filter(l=>l.stage==='Meeting Set').length,
+    ov=leads.filter(l=>l.fuR&&l.fuD&&diffD(l.fuD)<0).length,
+    tk=leads.reduce((a,l)=>(a+(l.tickets||[]).length),0);
+  const nr=leads.filter(l=>l.stage==='No Response').length;
+  document.getElementById('statsBar').innerHTML=`
+    <div class="stat"><div class="sn">${n}</div><div class="sl">Total</div></div>
+    <div class="stat"><div class="sn a">${ac}</div><div class="sl">Active</div></div>
+    <div class="stat"><div class="sn g">${cl}</div><div class="sl">Closed</div></div>
+    <div class="stat"><div class="sn y">${mt}</div><div class="sl">Meetings</div></div>
+    <div class="stat"><div class="sn r">${ov}</div><div class="sl">Overdue</div></div>
+    <div class="stat"><div class="sn" style="color:var(--t2)">${nr}</div><div class="sl">No Response</div></div>
+    <div class="stat"><div class="sn b">${tk}</div><div class="sl">Tickets</div></div>`;
+}
+
+/* ── RENDER ── */
+function renderAll(){
+  const q=document.getElementById('qS').value.toLowerCase(),qs=document.getElementById('qSt').value,
+    qf=document.getElementById('qFu').value,qp=document.getElementById('qPr').value;
+  let list=leads.filter(l=>{
+    const ct=(l.contacts||[]).map(c=>[c.name,c.role,c.phone,c.email,c.tg].join(' ')).join(' ');
+    const logTxt=(l.log||[]).map(e=>e.text).join(' ');
+    const mq=!q||[l.deal,l.loc,l.type,l.soft,l.del,l.notes,ct,logTxt].some(v=>v&&v.toLowerCase().includes(q));
+    const ms=!qs||l.stage===qs,mp=!qp||l.priority===qp;
+    let mf=true;
+    if(qf==='over')mf=l.fuR&&l.fuD&&diffD(l.fuD)<0;
+    else if(qf==='tod')mf=l.fuR&&l.fuD&&diffD(l.fuD)===0;
+    else if(qf==='up')mf=l.fuR&&l.fuD&&diffD(l.fuD)>0;
+    return mq&&ms&&mf&&mp;
+  });
+  const grid=document.getElementById('leadsGrid'),empty=document.getElementById('emptyState');
+  if(!list.length){grid.innerHTML='';empty.style.display='block';renderStats();checkReminders();return}
+  empty.style.display='none';
+
+  grid.innerHTML=list.map(l=>{
+    const dd=diffD(l.fuD),isOv=l.fuR&&dd!==null&&dd<0,isTd=l.fuR&&dd===0;
+    const isNoResp=l.stage==='No Response';
+    const cc=[isOv?'overdue':isTd?'due-today':'',l.priority==='High'?'hipri':'',isNoResp?'no-response':''].filter(Boolean).join(' ');
+    let fuH='';
+    if(l.fuR&&l.fuD){
+      if(isOv)fuH=`<div class="furow over">⚠ Overdue by ${Math.abs(dd)}d · ${fmtD(l.fuD)}</div>`;
+      else if(isTd)fuH=`<div class="furow tod">⏰ Follow-up due today</div>`;
+      else fuH=`<div class="furow up">↻ Follow up ${fmtD(l.fuD)} (in ${dd}d)</div>`;
+    }
+    const contacts=l.contacts||[];
+    const locArr=l.loc?l.loc.split(', ').filter(Boolean):[];
+    const locDisplay=locArr.map(v=>`<span class="loc-tag">${esc(v)}</span>`).join('');
+    const sub=[contacts[0]?.name].filter(Boolean).join(' · ');
+    let ctcH='';
+    if(contacts.length){
+      const rows=contacts.map(c=>{
+        const lks=[];
+        if(c.phone)lks.push(`<a href="tel:${esc(c.phone)}">${esc(c.phone)}</a>`);
+        if(c.email)lks.push(`<a href="mailto:${esc(c.email)}">${esc(c.email)}</a>`);
+        return`<div class="ce"><span class="ce-name">${esc(c.name||'—')}</span>${c.role?`<span class="ce-role">${esc(c.role)}</span>`:''} ${lks.length?`<span style="color:var(--info);font-size:10.5px">${lks.join(' · ')}</span>`:''}</div>`;
+      }).join('');
+      ctcH=`<div class="irow"><span class="ilbl">Contact${contacts.length>1?'s':''}</span><div class="ival clist">${rows}</div></div>`;
+    }
+    const pds=[{k:'em',l:'Email'},{k:'wa',l:'WhatsApp'},{k:'vb',l:'Viber'},{k:'cl',l:'Called'},{k:'ip',l:'In Person'}];
+    const pills=pds.map(p=>`<span class="pill ${l[p.k]?'done':''}">${l[p.k]?'✓ ':''}${p.l}</span>`).join('');
+    const priTag=l.priority==='High'?'<span style="color:var(--accent);font-size:9px;margin-left:5px">● HIGH</span>':l.priority==='Low'?'<span style="color:var(--t3);font-size:9px;margin-left:5px">● LOW</span>':'';
+    const delBadgeMap={ewity:'<span class="del-badge del-ewity">🚚 Ewity Managed</span>',self:'<span class="del-badge del-self">🏠 Self-managed</span>'};
+    const delBadge=l.delMode&&l.delMode!=='none'?delBadgeMap[l.delMode]||'':'';
+
+    // tickets
+    const tks=(l.tickets||[]);
+
+    return`<div class="deal-group">
+      <div class="card ${cc}" data-id="${l.id}">
+        <div class="ctop">
+          <div class="ctop-l">
+            <div class="cdeal">${esc(l.deal||'Unnamed')}${priTag}</div>
+            <div class="csub">${esc(sub||'—')}</div>
+            ${locDisplay?`<div style="display:flex;flex-wrap:wrap;gap:3px;margin-top:4px">${locDisplay}</div>`:''}
+          </div>
+          <div class="cacts">
+            <button class="ib tg" onclick="openTg('${l.id}')" title="Telegram"><span class="ib-tip">Telegram</span>✈</button>
+            <button class="ib wa" onclick="openWa('${l.id}')" title="WhatsApp"><span class="ib-tip">WhatsApp</span>💬</button>
+            <button class="ib em" onclick="openEm('${l.id}')" title="Email"><span class="ib-tip">Email</span>✉</button>
+            <button class="ib ed" onclick="openLeadModal('${l.id}')" title="Edit"><span class="ib-tip">Edit</span>✎</button>
+            <button class="ib del" onclick="delLead('${l.id}')" title="Delete"><span class="ib-tip">Delete</span>✕</button>
+          </div>
+        </div>
+        <div class="cbody">
+          <div class="irow"><span class="ilbl">Stage</span><span class="ival"><span class="sbadge ${scls(l.stage)}">${esc(l.stage)}</span></span></div>
+          ${ctcH}
+          ${l.soft?`<div class="irow"><span class="ilbl">POS</span><span class="ival">${esc(l.soft)}</span></div>`:''}
+          ${l.del?`<div class="irow"><span class="ilbl">Delivery</span><span class="ival">${esc(l.del)}</span></div>`:''}
+          ${delBadge?`<div class="irow"><span class="ilbl">Managed</span><div class="ival">${delBadge}</div></div>`:''}
+          <div class="irow"><span class="ilbl">Outreach</span><div class="ival"><div class="pills">${pills}</div></div></div>
+          ${fuH}
+          ${l.notes?`<div class="nsnip">${esc(l.notes)}</div>`:''}
+        </div>
+      </div>
+      <div class="card-footer">
+        <button class="card-tab tab-tickets ${(l.tickets||[]).length?'':''}  " onclick="openDrawer('${l.id}','tickets')">
+          🎫 Tickets${(l.tickets||[]).length?` <span class="tab-count">${(l.tickets||[]).length}</span>`:''}
+        </button>
+        <button class="card-tab tab-log" onclick="openDrawer('${l.id}','log')">
+          📝 Log${(l.log||[]).length?` <span class="tab-count">${(l.log||[]).length}</span>`:''}
+        </button>
+      </div>
+    </div>`;
+  }).join('');
+  renderStats();checkReminders();
+}
+
+/* ── EXPORT ── */
+function exportCSV(){
+  if(!leads.length){toast('No leads to export');return}
+  const hdr=['Business Name','Locations','Business Type','Branches','Stage','Priority',
+    'C1 Name','C1 Role','C1 Phone','C1 Email','C1 Telegram','C1 WhatsApp',
+    'C2 Name','C2 Role','C2 Phone','C2 Email','C2 Telegram','C2 WhatsApp',
+    'Current POS','Current Delivery App','Delivery Mode',
+    'Email Sent','WhatsApp Sent','Viber Sent','Called','Met In Person',
+    'Follow-up Required','Follow-up Date','Last Contact','Notes',
+    'Tickets (count)','Created','Updated'];
+  const e=v=>`"${String(v||'').replace(/"/g,'""')}"`;
+  const rows=[hdr.map(e).join(',')];
+  leads.forEach(l=>{
+    const cs=l.contacts||[];
+    const cv=i=>{const c=cs[i]||{};return[c.name,c.role,c.phone,c.email,c.tg,c.wa]};
+    rows.push([l.deal,l.loc,l.type,l.branches,l.stage,l.priority,
+      ...cv(0),...cv(1),l.soft,l.del,l.delMode,
+      l.em,l.wa,l.vb,l.cl,l.ip,l.fuR,l.fuD,l.lc,l.notes,
+      (l.tickets||[]).length,l.createdAt,l.updatedAt].map(e).join(','));
+  });
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([rows.join('\n')],{type:'text/csv;charset=utf-8;'}));
+  a.download='pulra-leads-'+todayS()+'.csv';a.click();
+  toast('✓ Exported '+leads.length+' leads');
+}
+
+function toggleScript(){document.getElementById('spanel').classList.toggle('open')}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')save()});
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){const discOv=document.getElementById('discardOv');if(discOv.classList.contains('open')){cancelDiscard();return}if(document.getElementById('notifPanel').classList.contains('open')){closeNotifPanel();return}if(fuPanelOpen){closeFuPanel();return}if(document.getElementById('leadOv').classList.contains('open')){tryCloseLeadModal();return}if(document.getElementById('tickOv').classList.contains('open')){tryCloseTicketModal();return}if(document.getElementById('drawer').classList.contains('open')){closeDrawer();return}closeTg();closeWa();closeEm()}
+  if((e.metaKey||e.ctrlKey)&&e.key==='n'){e.preventDefault();openLeadModal()}
+});
+
+/* ── DISCARD CONFIRMATION ── */
+let _discardCallback = null;
+
+function askDiscard(msg, onConfirm) {
+  document.getElementById('discardMsg').textContent = msg || "You have unsaved changes. If you close now, everything you've entered will be lost.";
+  _discardCallback = onConfirm;
+  document.getElementById('discardOv').classList.add('open');
+}
+function confirmDiscard() {
+  document.getElementById('discardOv').classList.remove('open');
+  if (_discardCallback) { _discardCallback(); _discardCallback = null; }
+}
+function cancelDiscard() {
+  document.getElementById('discardOv').classList.remove('open');
+  _discardCallback = null;
+}
+
+/* snapshot of form values when modal opens — detect real changes only */
+let _leadSnap = null;
+let _tickSnap = null;
+
+function snapLeadForm() {
+  return JSON.stringify({
+    deal: document.getElementById('f_deal').value,
+    loc: document.getElementById('f_loc').value,
+    type: document.getElementById('f_type').value,
+    branches: document.getElementById('f_branches').value,
+    soft: document.getElementById('f_soft').value,
+    del: document.getElementById('f_del').value,
+    notes: document.getElementById('f_notes').value,
+    lc: document.getElementById('f_lc').value,
+    fuD: document.getElementById('f_fuD').value,
+    fuR: document.getElementById('f_fuR').checked,
+    stage: document.getElementById('f_stage').value,
+    pri: document.getElementById('f_pri').value,
+    delMode: document.getElementById('f_delMode').value,
+    em: document.getElementById('f_em').checked,
+    wa: document.getElementById('f_wa').checked,
+    vb: document.getElementById('f_vb').checked,
+    cl: document.getElementById('f_cl').checked,
+    ip: document.getElementById('f_ip').checked,
+    ctcs: JSON.stringify(ctcs),
+    locs: JSON.stringify(selectedLocs),
+  });
+}
+
+function snapTicketForm() {
+  return JSON.stringify({
+    type:     document.getElementById('t_type').value,
+    status:   document.getElementById('t_status').value,
+    title:    document.getElementById('t_title').value,
+    date:     document.getElementById('t_date').value,
+    time:     document.getElementById('t_time').value,
+    assigned: document.getElementById('t_assigned').value,
+    pri:      document.getElementById('t_pri').value,
+    notes:    document.getElementById('t_notes').value,
+  });
+}
+
+function isLeadDirty()  { return _leadSnap !== null && snapLeadForm()  !== _leadSnap; }
+function isTicketDirty(){ return _tickSnap !== null && snapTicketForm() !== _tickSnap; }
+
+function tryCloseLeadModal() {
+  if (isLeadDirty()) {
+    askDiscard("You have unsaved changes. Close without saving?", () => closeLeadModal());
+  } else {
+    closeLeadModal();
+  }
+}
+
+function tryCloseTicketModal() {
+  if (isTicketDirty()) {
+    askDiscard("You have unsaved ticket changes. Close without saving?", () => closeTicketModal());
+  } else {
+    closeTicketModal();
+  }
+}
+
+
+
+
+
+/* ── DRAWER ── */
+let drawerLeadId = null;
+let drawerTab = 'tickets';
+
+function openDrawer(leadId, tab='tickets') {
+  drawerLeadId = leadId;
+  drawerTab = tab;
+  const l = leads.find(x => x.id === leadId);
+  if (!l) return;
+  document.getElementById('drawerDealName').textContent = l.deal || '—';
+  document.getElementById('drawerDealSub').textContent = [l.type, l.loc].filter(Boolean).join(' · ');
+  renderDrawer();
+  document.getElementById('drawer').classList.add('open');
+  document.getElementById('drawerOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  if (tab === 'log') {
+    setTimeout(() => document.getElementById('drawerLogTa')?.focus(), 250);
+  }
+}
+
+function closeDrawer() {
+  document.getElementById('drawer').classList.remove('open');
+  document.getElementById('drawerOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+  drawerLeadId = null;
+}
+
+function switchDrawerTab(tab) {
+  drawerTab = tab;
+  document.querySelectorAll('.dtab').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.drawer-pane').forEach(el => el.classList.remove('active'));
+  document.getElementById('dtab-'+tab).classList.add('active');
+  document.getElementById('dpane-'+tab).classList.add('active');
+}
+
+function addTicketFromDrawer() {
+  if (drawerLeadId) openTicketModal(drawerLeadId);
+}
+
+function renderDrawer() {
+  if (!drawerLeadId) return;
+  switchDrawerTab(drawerTab);
+  renderDrawerTickets();
+  renderDrawerLog();
+  updateDrawerCounts();
+}
+
+function updateDrawerCounts() {
+  const l = leads.find(x => x.id === drawerLeadId);
+  if (!l) return;
+  const tk = (l.tickets||[]).length;
+  const lg = (l.log||[]).length;
+  document.getElementById('drawerTickCount').textContent = tk > 0 ? '(' + tk + ')' : '';
+  document.getElementById('drawerLogCount').textContent  = lg > 0 ? '(' + lg + ')' : '';
+}
+
+function renderDrawerTickets() {
+  const l = leads.find(x => x.id === drawerLeadId);
+  const wrap = document.getElementById('drawerTickets');
+  if (!l || !(l.tickets||[]).length) {
+    wrap.innerHTML = '<div class="drawer-empty"><div class="drawer-empty-ico">◎</div><span>No tickets yet</span></div>';
+    return;
+  }
+  wrap.innerHTML = l.tickets.map(t => {
+    const tPriDot = t.priority==='high' ? '<span style="color:var(--accent);font-size:9px;margin-right:3px">●</span>' : t.priority==='low' ? '<span style="color:var(--t3);font-size:9px;margin-right:3px">●</span>' : '';
+    const dd = t.date ? diffD(t.date) : null;
+    const dateColor = dd!==null&&dd<0 ? 'color:var(--danger)' : dd===0 ? 'color:var(--warn)' : '';
+    return `<div class="ticket">
+      <div class="ticket-top">
+        <div class="ticket-left">
+          <span class="ticket-icon">${tIcon[t.type]||'◎'}</span>
+          <span class="ticket-title">${tPriDot}${esc(t.title||(t.type.charAt(0).toUpperCase()+t.type.slice(1)))}</span>
+        </div>
+        <div class="ticket-acts">
+          <span class="ts-badge ${tsClass[t.status]||'ts-pending'}" onclick="cycleTicketStatusDrawer('${t.id}')" title="Click to cycle">${tsLabel[t.status]||'Pending'}</span>
+          <button class="ib ed" onclick="editTicketFromDrawer('${t.id}')" title="Edit"><span class="ib-tip">Edit</span>✎</button>
+          <button class="ib del" onclick="delTicketFromDrawer('${t.id}')" title="Delete"><span class="ib-tip">Delete</span>&#x2715;</button>
+        </div>
+      </div>
+      <div class="ticket-body">
+        ${t.date?`<div class="ticket-row"><span class="ticket-lbl">Date</span><span class="ticket-val" style="${dateColor}">${fmtDT(t.date,t.time)}</span></div>`:''}
+        ${t.assigned?`<div class="ticket-row"><span class="ticket-lbl">Assigned</span><span class="ticket-val">${esc(t.assigned)}</span></div>`:''}
+        ${t.notes?`<div class="ticket-note">${esc(t.notes)}</div>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function cycleTicketStatusDrawer(tickId) {
+  cycleTicketStatus(drawerLeadId, tickId);
+  renderDrawerTickets();
+  renderAll();
+}
+function editTicketFromDrawer(tickId) {
+  openTicketModal(drawerLeadId, tickId);
+}
+function delTicketFromDrawer(tickId) {
+  const l = leads.find(x => x.id === drawerLeadId);
+  if (!l) return;
+  l.tickets = (l.tickets||[]).filter(t => t.id !== tickId);
+  deleteTicketFromSupabase(tickId).then(()=>{
+    l.tickets=(l.tickets||[]).filter(t=>t.id!==tickId);
+    renderDrawer(); renderAll(); toast('Ticket deleted');
+  });
+}
+
+/* ── LOG in drawer ── */
+const LOG_TYPES = ['note','call','email','whatsapp','meeting','visit','other'];
+const LT_LABEL  = {note:'Note',call:'Call',email:'Email',whatsapp:'WhatsApp',meeting:'Meeting',visit:'Visit',other:'Other'};
+
+function renderDrawerLog() {
+  const l = leads.find(x => x.id === drawerLeadId);
+  const entries = l?.log || [];
+  const wrap = document.getElementById('drawerLogEntries');
+  const typeRow = document.getElementById('drawerLogTypeRow');
+
+  // Type pills
+  typeRow.innerHTML = LOG_TYPES.map(t =>
+    `<div class="log-type-opt${t==='note'?' sel':''}" data-type="${t}" onclick="setDrawerLogType('${t}')">${LT_LABEL[t]}</div>`
+  ).join('');
+
+  if (!entries.length) {
+    wrap.innerHTML = '<div class="drawer-empty"><div class="drawer-empty-ico">📝</div><span>No interactions logged yet.<br>Add your first note below.</span></div>';
+    return;
+  }
+  wrap.innerHTML = entries.map(e => {
+    const d = new Date(e.date);
+    const dateStr = d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+    const timeStr = d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+    return `<div class="log-entry">
+      <div class="log-entry-head">
+        <span class="log-type-tag lt-${e.type||'note'}">${LT_LABEL[e.type]||'Note'}</span>
+        <span class="log-date">${dateStr} · ${timeStr}</span>
+      </div>
+      <div class="log-text">${esc(e.text)}</div>
+      <button class="log-del" onclick="deleteDrawerLog('${e.id}')" title="Delete">✕</button>
+    </div>`;
+  }).join('');
+}
+
+function setDrawerLogType(type) {
+  document.querySelectorAll('#drawerLogTypeRow .log-type-opt').forEach(el =>
+    el.classList.toggle('sel', el.dataset.type === type)
+  );
+}
+
+function getDrawerLogType() {
+  const sel = document.querySelector('#drawerLogTypeRow .log-type-opt.sel');
+  return sel ? sel.dataset.type : 'note';
+}
+
+function submitDrawerLog() {
+  const ta = document.getElementById('drawerLogTa');
+  const text = ta ? ta.value.trim() : '';
+  if (!text) return;
+  const l = leads.find(x => x.id === drawerLeadId);
+  if (!l) return;
+  if (!l.log) l.log = [];
+  const logType = getDrawerLogType();
+  ta.value = '';
+  saveInteractionToSupabase(drawerLeadId, logType, text).then(ok => {
+    if (!ok) return;
+    if (!l.log) l.log = [];
+    l.log.unshift({ id: uid(), type: logType, text, date: new Date().toISOString() });
+    l.lc = todayS();
+    if (['call','meeting','visit'].includes(logType)) {
+      const ltLabel = {call:'Call',meeting:'Meeting',visit:'Visit'};
+      notify('log', `📝 <b>${ltLabel[logType]} Logged</b>\n<b>${l.deal}</b>\n"${text.slice(0,120)}${text.length>120?'…':''}"`);
+    }
+    renderDrawerLog();
+    updateDrawerCounts();
+    renderAll();
+  });
+}
+
+function deleteDrawerLog(entryId) {
+  const l = leads.find(x => x.id === drawerLeadId);
+  if (!l || !l.log) return;
+  deleteInteractionFromSupabase(entryId).then(()=>{
+    l.log = l.log.filter(e => e.id !== entryId);
+    renderDrawerLog(); updateDrawerCounts(); renderAll();
+  });
+}
+
+
+/* ── DAILY FOLLOW-UP NOTIFICATION ── */
+function scheduleDailyCheck() {
+  // Fire once now in case it's already past midnight check time
+  runFollowUpCheck();
+  // Then every hour check if we should send (only fires once per day)
+  setInterval(runFollowUpCheck, 3600000);
+}
+
+function runFollowUpCheck() {
+  const todayKey = 'pulra_fu_notif_' + todayS();
+  if (localStorage.getItem(todayKey)) return; // already notified today
+  localStorage.setItem(todayKey, '1');
+  const s = loadNotifSettings();
+  const overdue = leads.filter(l => l.fuR && l.fuD && diffD(l.fuD) < 0);
+  const dueToday = leads.filter(l => l.fuR && l.fuD && diffD(l.fuD) === 0);
+  if (dueToday.length && s.fu_today) {
+    const names = dueToday.map(l => '• ' + l.deal).join('\n');
+    notify('fu_today', `⏰ <b>Follow-ups Due Today</b>\n${names}`);
+  }
+  if (overdue.length && s.fu_over) {
+    const names = overdue.map(l => `• ${l.deal} (${Math.abs(diffD(l.fuD))}d overdue)`).join('\n');
+    notify('fu_over', `⚠ <b>Overdue Follow-ups</b>\n${names}`);
+  }
+}
+
+init();
+setInterval(checkReminders,60000);
+
+/* ── GLOBAL TOOLTIP ── */
+const gTip = document.getElementById('globalTip');
+function showTip(el, text) {
+  gTip.textContent = text;
+  gTip.style.display = 'block';
+  const r = el.getBoundingClientRect();
+  // Center horizontally over button
+  gTip.style.left = (r.left + r.width/2) + 'px';
+  // Show above if enough space, below otherwise
+  const tipH = 28;
+  if (r.top > tipH + 10) {
+    gTip.style.top = (r.top - tipH - 4) + 'px';
+  } else {
+    gTip.style.top = (r.bottom + 4) + 'px';
+  }
+}
+function hideTip() { gTip.style.display = 'none'; }
+document.addEventListener('mouseover', e => {
+  const ib = e.target.closest('.ib');
+  if (ib) {
+    const tip = ib.querySelector('.ib-tip');
+    if (tip) showTip(ib, tip.textContent);
+  }
+});
+document.addEventListener('mouseout', e => {
+  if (e.target.closest('.ib')) hideTip();
+});
+document.addEventListener('scroll', hideTip, true);
+
+/* ── TICKET PRESETS ── */
+function setTicketPreset(days, el) {
+  const d = new Date();
+  d.setDate(d.getDate() + days);
+  const iso = d.toISOString().split('T')[0];
+  document.getElementById('t_date').value = iso;
+  document.querySelectorAll('.tk-opt').forEach(e => e.classList.remove('active'));
+  if (el) el.classList.add('active');
+  updateTicketDateDisplay();
+}
+function openTicketDatePicker(el) {
+  document.querySelectorAll('.tk-opt').forEach(e => e.classList.remove('active'));
+  if (el) el.classList.add('active');
+  try { document.getElementById('t_date').showPicker(); } catch(e) { document.getElementById('t_date').focus(); }
+}
+function onTicketDateChange() {
+  document.querySelectorAll('.tk-opt').forEach(e => e.classList.remove('active'));
+  updateTicketDateDisplay();
+}
+function updateTicketDateDisplay() {
+  const v = document.getElementById('t_date').value;
+  const el = document.getElementById('tkDateDisplay');
+  if (!el) return;
+  if (!v) { el.textContent = ''; return; }
+  const dd = diffD(v);
+  if (dd < 0) el.textContent = '⚠ ' + fmtD(v) + ' (overdue by ' + Math.abs(dd) + 'd)';
+  else if (dd === 0) el.textContent = 'Today — ' + fmtD(v);
+  else el.textContent = fmtD(v) + ' (in ' + dd + 'd)';
+}
+</script>
+
+<!-- NOTIFICATION SETTINGS PANEL -->
+<div class="notif-panel" id="notifPanel">
+  <div class="np-head">
+    <span class="np-title">⚙ Notification Settings</span>
+    <button class="mcls" onclick="closeNotifPanel()">&#x2715;</button>
+  </div>
+  <div class="np-body">
+    <div class="np-section">
+      <div class="np-sec-title">Telegram Connection</div>
+      <div class="np-row" style="flex-direction:column;align-items:flex-start;gap:6px">
+        <label class="config-lbl">Bot Token</label>
+        <input type="text" class="np-input" id="np_token" placeholder="123456:ABC-DEF...">
+      </div>
+      <div class="np-row" style="flex-direction:column;align-items:flex-start;gap:6px">
+        <label class="config-lbl">Chat / Group ID</label>
+        <input type="text" class="np-input" id="np_chat" placeholder="-100123456789">
+      </div>
+      <button class="np-test-btn" onclick="testTelegram()">Send test message ↗</button>
+    </div>
+
+    <div class="np-section">
+      <div class="np-sec-title">Notify when…</div>
+      <div class="np-row">
+        <div><div class="np-row-label">New lead added</div><div class="np-row-sub">Any new business is created</div></div>
+        <label class="np-toggle"><input type="checkbox" id="nt_new_lead" checked><span class="np-slider"></span></label>
+      </div>
+      <div class="np-row">
+        <div><div class="np-row-label">Stage changed</div><div class="np-row-sub">Lead moves to a new stage</div></div>
+        <label class="np-toggle"><input type="checkbox" id="nt_stage" checked><span class="np-slider"></span></label>
+      </div>
+      <div class="np-row">
+        <div><div class="np-row-label">Follow-up due today</div><div class="np-row-sub">Daily at midnight check</div></div>
+        <label class="np-toggle"><input type="checkbox" id="nt_fu_today" checked><span class="np-slider"></span></label>
+      </div>
+      <div class="np-row">
+        <div><div class="np-row-label">Follow-up overdue</div><div class="np-row-sub">Past due date, still open</div></div>
+        <label class="np-toggle"><input type="checkbox" id="nt_fu_over" checked><span class="np-slider"></span></label>
+      </div>
+      <div class="np-row">
+        <div><div class="np-row-label">New ticket created</div><div class="np-row-sub">Meeting, task, etc. added</div></div>
+        <label class="np-toggle"><input type="checkbox" id="nt_ticket"><span class="np-slider"></span></label>
+      </div>
+      <div class="np-row">
+        <div><div class="np-row-label">Ticket status changed</div><div class="np-row-sub">Completed, cancelled, etc.</div></div>
+        <label class="np-toggle"><input type="checkbox" id="nt_ticket_status"><span class="np-slider"></span></label>
+      </div>
+      <div class="np-row">
+        <div><div class="np-row-label">Meeting scheduled</div><div class="np-row-sub">Meeting ticket with a set date</div></div>
+        <label class="np-toggle"><input type="checkbox" id="nt_meeting" checked><span class="np-slider"></span></label>
+      </div>
+      <div class="np-row">
+        <div><div class="np-row-label">Call / visit logged</div><div class="np-row-sub">Interaction log: call, meeting, visit</div></div>
+        <label class="np-toggle"><input type="checkbox" id="nt_log"><span class="np-slider"></span></label>
+      </div>
+      <div class="np-row">
+        <div><div class="np-row-label">Lead closed or lost</div><div class="np-row-sub">Stage set to Closed or Lost</div></div>
+        <label class="np-toggle"><input type="checkbox" id="nt_closed" checked><span class="np-slider"></span></label>
+      </div>
+    </div>
+
+    <div class="np-section">
+      <div class="np-sec-title">Format</div>
+      <div class="np-row">
+        <div><div class="np-row-label">Include notes snippet</div><div class="np-row-sub">First 80 chars of notes in message</div></div>
+        <label class="np-toggle"><input type="checkbox" id="nt_include_notes"><span class="np-slider"></span></label>
+      </div>
+      <div class="np-row">
+        <div><div class="np-row-label">Include your name</div><div class="np-row-sub">Who made the change</div></div>
+        <label class="np-toggle"><input type="checkbox" id="nt_include_who" checked><span class="np-slider"></span></label>
+      </div>
+    </div>
+
+    <button class="np-save-btn" onclick="saveNotifSettings()">Save Settings</button>
+    <p style="font-size:10px;color:var(--t3);text-align:center;line-height:1.6">Settings are saved on this device. Each team member sets their own notification preferences.</p>
+  </div>
+</div>
+</body>
+</html>
