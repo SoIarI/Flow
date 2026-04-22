@@ -211,6 +211,9 @@ Log types: `note | call | meeting | email | whatsapp | visit | other`
 - `loadNotifSettings()` / `saveNotifSettings()` — per-device settings
 - Trigger keys: `new_lead | stage | fu_today | fu_over | ticket | ticket_status | meeting | log | closed`
 
+### Google Calendar
+- `addToGcal(leadId, tickId)` — builds a Google Calendar `render?action=TEMPLATE` URL from ticket data (title, date/time, notes, assigned, lead name, location) and opens in a new tab; no OAuth required. Button appears on tickets that have a date set, inside the drawer ticket card. Timed events default to 1-hour duration.
+
 ### Theme
 - `initTheme()` — reads `localStorage('flow_theme')`, sets `data-theme`, updates button
 - `toggleTheme()` — canvas wave animation (680ms) + theme switch at midpoint

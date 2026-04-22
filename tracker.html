@@ -2261,6 +2261,7 @@ function renderDrawerTickets() {
         </div>
         <div class="ticket-acts">
           <span class="ts-badge ${tsClass[t.status]||'ts-pending'}" onclick="cycleTicketStatusDrawer('${t.id}')" title="Click to cycle">${tsLabel[t.status]||'Pending'}</span>
+          ${t.date?`<button class="ib" onclick="addToGcal('${drawerLeadId}','${t.id}')" title="Add to Google Calendar"><span class="ib-tip">Add to Calendar</span>📅</button>`:''}
           <button class="ib ed" onclick="editTicketFromDrawer('${t.id}')" title="Edit"><span class="ib-tip">Edit</span>✎</button>
           <button class="ib del" onclick="delTicketFromDrawer('${t.id}')" title="Delete"><span class="ib-tip">Delete</span>&#x2715;</button>
         </div>
@@ -2290,6 +2291,46 @@ function delTicketFromDrawer(tickId) {
     l.tickets=(l.tickets||[]).filter(t=>t.id!==tickId);
     renderDrawer(); renderAll(); toast('Ticket deleted');
   });
+}
+
+/* ── GOOGLE CALENDAR ── */
+function addToGcal(leadId, tickId) {
+  const l = leads.find(x => x.id === leadId);
+  if (!l) return;
+  const t = (l.tickets||[]).find(x => x.id === tickId);
+  if (!t || !t.date) { toast('⚠ Add a date to the ticket first'); return; }
+
+  const typeLabel = t.type.charAt(0).toUpperCase() + t.type.slice(1);
+  const title = (t.title || typeLabel) + ' — ' + l.deal;
+
+  let datePart;
+  if (t.time) {
+    const [h, m] = t.time.split(':').map(Number);
+    const start = t.date.replace(/-/g, '') + 'T' + String(h).padStart(2,'0') + String(m).padStart(2,'0') + '00';
+    const endH = (h + 1) % 24;
+    const end   = t.date.replace(/-/g, '') + 'T' + String(endH).padStart(2,'0') + String(m).padStart(2,'0') + '00';
+    datePart = start + '/' + end;
+  } else {
+    const d = new Date(t.date + 'T00:00:00');
+    d.setDate(d.getDate() + 1);
+    datePart = t.date.replace(/-/g,'') + '/' + d.toISOString().slice(0,10).replace(/-/g,'');
+  }
+
+  const details = [
+    t.notes || '',
+    t.assigned ? 'Assigned to: ' + t.assigned : '',
+    (l.contacts||[]).filter(c=>c.name).map(c=>[c.name,c.phone].filter(Boolean).join(' ')).join(', '),
+  ].filter(Boolean).join('\n');
+
+  const params = new URLSearchParams({
+    action: 'TEMPLATE',
+    text: title,
+    dates: datePart,
+    details,
+    location: l.loc || '',
+  });
+  window.open('https://calendar.google.com/calendar/render?' + params, '_blank');
+  toast('✓ Opening Google Calendar…');
 }
 
 /* ── LOG in drawer ── */
