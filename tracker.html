@@ -112,6 +112,13 @@
   --green:#18a775;--green-dim:rgba(24,167,117,0.10);
   --teal:#0c9688;--teal-dim:rgba(12,150,136,0.10);
   --r:8px;--rl:12px;
+  --header-bg:rgba(245,244,240,0.92);
+}
+[data-theme="dark"]{
+  --bg:#0f0e17;--s1:#161522;--s2:#1d1c2a;--s3:#252433;
+  --b1:rgba(255,255,255,0.06);--b2:rgba(255,255,255,0.10);--b3:rgba(255,255,255,0.20);
+  --t1:#e8e7f2;--t2:#9796aa;--t3:#5c5b70;
+  --header-bg:rgba(15,14,23,0.92);
 }
 *{margin:0;padding:0;box-sizing:border-box}
 html{scroll-behavior:smooth}
@@ -122,7 +129,7 @@ body::after{content:'';position:fixed;bottom:-200px;right:-100px;width:500px;hei
 ::-webkit-scrollbar{width:3px;height:3px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--b2);border-radius:99px}
 
 /* HEADER */
-header{position:sticky;top:0;z-index:100;background:rgba(245,244,240,0.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--b1);padding:0 28px;display:flex;align-items:center;justify-content:space-between;height:54px}
+header{position:sticky;top:0;z-index:100;background:var(--header-bg);backdrop-filter:blur(20px);border-bottom:1px solid var(--b1);padding:0 28px;display:flex;align-items:center;justify-content:space-between;height:54px}
 .logo{font-family:'Syne',sans-serif;font-weight:800;font-size:17px;letter-spacing:-0.3px;display:flex;align-items:center;gap:8px}
 .logo-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 10px rgba(91,106,240,0.5)}
 .logo-sub{font-size:10px;font-weight:400;color:var(--t3);letter-spacing:0.08em;text-transform:uppercase}
@@ -442,6 +449,8 @@ select option{background:var(--s2)}
 
 </style>
 
+<script>(function(){var t=localStorage.getItem('pulra_theme');if(t==='dark')document.documentElement.setAttribute('data-theme','dark');})()</script>
+
 <!-- LOGIN SCREEN -->
 <div id="loginScreen" style="display:none">
   <div class="login-card">
@@ -488,6 +497,7 @@ select option{background:var(--s2)}
       <div style="width:22px;height:22px;border-radius:50%;background:var(--accent-dim);border:1px solid rgba(91,106,240,0.3);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--accent);font-weight:700" id="userAvatar">P</div>
       <span style="font-size:12px;color:var(--t2);font-weight:500" id="userName">Pulra</span>
     </div>
+    <button id="themeToggleBtn" class="btn ghost" onclick="toggleTheme()" title="Toggle light/dark mode" style="width:32px;padding:0;justify-content:center;font-size:15px">☾</button>
     <button class="settings-btn" onclick="openNotifPanel()" title="Notification Settings">⚙ Notifications</button>
     <button class="btn ghost" onclick="doLogout()" style="color:var(--t3)">Sign out</button>
   </div>
@@ -2550,6 +2560,59 @@ async function confirmImport() {
   toast(`✓ Imported ${done} lead${done!==1?'s':''}${failed?` (${failed} failed)`:''}`);
 }
 
+/* ── THEME ── */
+const THEME_KEY = 'pulra_theme';
+function initTheme() {
+  const saved = localStorage.getItem(THEME_KEY) || 'light';
+  document.documentElement.setAttribute('data-theme', saved);
+  const btn = document.getElementById('themeToggleBtn');
+  if (btn) btn.textContent = saved === 'dark' ? '☀' : '☾';
+}
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme') || 'light';
+  const next = current === 'dark' ? 'light' : 'dark';
+  const bgColor = next === 'dark' ? '#0f0e17' : '#f5f4f0';
+  const canvas = document.getElementById('themeWaveCanvas');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  canvas.style.display = 'block';
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const duration = 680;
+  const start = performance.now();
+  let switched = false;
+  function frame(now) {
+    const t = Math.min((now - start) / duration, 1);
+    const ease = t < 0.5 ? 2*t*t : -1+(4-2*t)*t;
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = bgColor;
+    const frontX = ease * (W + 160) - 80;
+    const amp = 52;
+    const freq = (2 * Math.PI) / (H * 0.42);
+    const phase = ease * Math.PI * 3.5;
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(frontX + Math.sin(phase) * amp, 0);
+    for (let y = 3; y <= H; y += 3) {
+      ctx.lineTo(frontX + Math.sin(y * freq + phase) * amp, y);
+    }
+    ctx.lineTo(0, H);
+    ctx.closePath();
+    ctx.fill();
+    if (!switched && ease >= 0.5) {
+      switched = true;
+      document.documentElement.setAttribute('data-theme', next);
+      localStorage.setItem(THEME_KEY, next);
+      const btn = document.getElementById('themeToggleBtn');
+      if (btn) btn.textContent = next === 'dark' ? '☀' : '☾';
+    }
+    if (t < 1) { requestAnimationFrame(frame); }
+    else { canvas.style.display = 'none'; }
+  }
+  requestAnimationFrame(frame);
+}
+
+initTheme();
 init();
 setInterval(checkReminders,60000);
 
@@ -2689,5 +2752,7 @@ function updateTicketDateDisplay() {
     <p style="font-size:10px;color:var(--t3);text-align:center;line-height:1.6">Settings are saved on this device. Each team member sets their own notification preferences.</p>
   </div>
 </div>
+
+<canvas id="themeWaveCanvas" style="position:fixed;inset:0;z-index:9999;pointer-events:none;display:none"></canvas>
 </body>
 </html>
