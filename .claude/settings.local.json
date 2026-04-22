@@ -2,7 +2,9 @@
   "permissions": {
     "allow": [
       "Bash(git add *)",
-      "Bash(git commit -m ' *)"
+      "Bash(git commit -m ' *)",
+      "Bash(git -C \"d:/Flow\" add tracker.html CLAUDE.md)",
+      "Bash(git -C d:/Flow commit -m ' *)"
     ]
   }
 }
