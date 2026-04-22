@@ -213,6 +213,7 @@ Log types: `note | call | meeting | email | whatsapp | visit | other`
 
 ### Google Calendar
 - `addToGcal(leadId, tickId)` — builds a Google Calendar `render?action=TEMPLATE` URL from ticket data (title, date/time, notes, assigned, lead name, location) and opens in a new tab; no OAuth required. Button appears on tickets that have a date set, inside the drawer ticket card. Timed events default to 1-hour duration.
+- `setDelMode(m)` / `loadDelMode(m)` — controls 3-way plan toggle: `none` / `ewity` (Starter) / `self` (Growth)
 
 ### Theme
 - `initTheme()` — reads `localStorage('flow_theme')`, sets `data-theme`, updates button
@@ -342,7 +343,9 @@ APP_VERSION  = '2.0.0'
 ---
 
 ## Business Context
-- **Product**: Flow — online ordering platform for Maldivian restaurants
-- **Locations**: Malé, Hulhumalé, Villimalé (island-based, multi-location leads)
+- **Product**: Flow — service listing platform where businesses list their services, manage bookings and payments
+- **Customers**: any service business (professional services, health, home services, education, events, transport, etc.)
+- **Locations**: Malé, Hulhumalé, Villimalé (island-based, multi-location leads) — Maldives focused
 - **Team**: small sales team, each member configures their own Telegram notifications
-- **Delivery modes**: "Managed by Ewity" (sister product) / "Self-managed" / Not set
+- **Plan tiers** (stored in `delMode` field): `none` = Not decided · `ewity` = Starter · `self` = Growth
+- **Mobile**: responsive `@media (max-width: 660px)` — single-column grid, bottom-sheet modals, horizontal-scroll toolbar, `.ml-hide` / `.ml-show` utility classes collapse header labels

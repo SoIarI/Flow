@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Flow · Lead Tracker</title>
+<title>Flow · CRM</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@500;700;800&display=swap" rel="stylesheet">
 <!-- Supabase JS client -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
@@ -447,6 +447,57 @@ select option{background:var(--s2)}
 .ctc-wrap{display:flex;flex-direction:column;gap:8px}
 .ctc-card{background:var(--s2);border:1px solid var(--b1);border-radius:var(--r);padding:12px 13px}
 
+/* ── MOBILE ── */
+@media (max-width: 660px){
+  /* Hide verbose labels in header */
+  .ml-hide{display:none}
+  .ml-show{display:inline!important}
+  /* Header */
+  header{padding:0 12px;height:50px}
+  .logo{font-size:14px}
+  .header-r{gap:6px}
+  .sync-status{gap:3px}
+  /* Squish notif button to icon only */
+  .settings-btn{padding:5px 7px}
+  /* Toolbar: horizontal scroll strip */
+  .toolbar{padding:8px 12px;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;gap:6px}
+  .toolbar::-webkit-scrollbar{display:none}
+  .tsep{flex-shrink:0}
+  .sbox{min-width:130px;flex-shrink:0}
+  /* Stats */
+  .stat{min-width:68px;padding:7px 10px}
+  .sn{font-size:16px}
+  .sl{font-size:8px}
+  /* Main layout */
+  .main{padding:12px 12px}
+  .grid{grid-template-columns:1fr;gap:12px}
+  /* Cards: bigger touch targets */
+  .ib{width:31px;height:31px;font-size:13px}
+  /* Modals: full-width bottom sheet */
+  .overlay{padding:0;align-items:flex-end}
+  .modal{max-width:100%;border-radius:18px 18px 0 0;max-height:94vh}
+  .modal.sm{max-width:100%;border-radius:18px 18px 0 0}
+  .mhd{border-radius:18px 18px 0 0;padding:13px 18px 11px}
+  .mft{padding:10px 18px}
+  .mbody{padding:14px 18px;gap:12px}
+  /* Stacked form rows on mobile */
+  .frow{grid-template-columns:1fr}
+  .frow.t3{grid-template-columns:1fr}
+  /* Drawer: full width */
+  .drawer{width:100%;border-left:none;border-top:1px solid var(--b2);border-radius:18px 18px 0 0}
+  .drawer-overlay{background:rgba(0,0,0,0.45)}
+  /* Follow-up panel */
+  .fu-panel{top:50px}
+  .fu-panel-inner{padding:12px 12px}
+  /* Notif panel */
+  .notif-panel{width:100%;border-left:none}
+  /* Login / config */
+  .login-card{padding:32px 22px;border-radius:16px}
+  .config-card{padding:28px 22px}
+  /* Fu quick-pick: 2 cols on mobile */
+  .fu-opts{grid-template-columns:repeat(2,1fr)}
+}
+
 </style>
 
 <script>(function(){var t=localStorage.getItem('flow_theme');if(t==='dark')document.documentElement.setAttribute('data-theme','dark');})()</script>
@@ -455,7 +506,7 @@ select option{background:var(--s2)}
 <div id="loginScreen" style="display:none">
   <div class="login-card">
     <div class="login-logo"><div class="login-logo-dot"></div>FLOW</div>
-    <div class="login-tagline">Lead Tracker — Team Access</div>
+    <div class="login-tagline">CRM — Team Access</div>
     <label class="login-label" for="loginPass">Password</label>
     <input type="password" class="login-input" id="loginPass" placeholder="Enter password…" onkeydown="if(event.key==='Enter')doLogin()">
     <button class="login-btn" onclick="doLogin()">Sign In →</button>
@@ -490,16 +541,16 @@ select option{background:var(--s2)}
 </div>
 
 <header>
-  <div class="logo"><div class="logo-dot"></div>FLOW<span class="logo-sub">Leads</span></div>
+  <div class="logo"><div class="logo-dot"></div>FLOW<span class="logo-sub">CRM</span></div>
   <div class="header-r">
-    <div class="sync-status"><div class="sync-dot" id="syncDot"></div><span id="syncLbl">connecting…</span></div>
+    <div class="sync-status"><div class="sync-dot" id="syncDot"></div><span id="syncLbl" class="ml-hide">connecting…</span></div>
     <div style="display:flex;align-items:center;gap:7px;background:var(--s2);border:1px solid var(--b1);border-radius:99px;padding:5px 14px 5px 9px">
       <div style="width:22px;height:22px;border-radius:50%;background:var(--accent-dim);border:1px solid rgba(91,106,240,0.3);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--accent);font-weight:700" id="userAvatar">P</div>
-      <span style="font-size:12px;color:var(--t2);font-weight:500" id="userName">Flow</span>
+      <span style="font-size:12px;color:var(--t2);font-weight:500" id="userName" class="ml-hide">Flow</span>
     </div>
     <button id="themeToggleBtn" class="btn ghost" onclick="toggleTheme()" title="Toggle light/dark mode" style="width:32px;padding:0;justify-content:center;font-size:15px">☾</button>
-    <button class="settings-btn" onclick="openNotifPanel()" title="Notification Settings">⚙ Notifications</button>
-    <button class="btn ghost" onclick="doLogout()" style="color:var(--t3)">Sign out</button>
+    <button class="settings-btn" onclick="openNotifPanel()" title="Notification Settings">⚙<span class="ml-hide"> Notifications</span></button>
+    <button class="btn ghost" onclick="doLogout()" style="color:var(--t3)"><span class="ml-hide">Sign out</span><span style="display:none" class="ml-show">↩</span></button>
   </div>
 </header>
 
@@ -562,7 +613,7 @@ select option{background:var(--s2)}
   <div class="grid" id="leadsGrid"></div>
   <div class="empty" id="emptyState" style="display:none">
     <div class="eico">◎</div><h3>No leads yet</h3>
-    <p>Add your first restaurant to get started.<br>All data saves automatically to your browser.</p>
+    <p>Add your first business to get started.<br>All data syncs automatically across your team.</p>
   </div>
 </div>
 
@@ -594,43 +645,54 @@ select option{background:var(--s2)}
       <div class="fg"><label class="flbl">Business Type</label>
         <select id="f_type_sel" onchange="onTypeChange()">
           <option value="">— Select type —</option>
-          <optgroup label="Food & Beverage">
-            <option value="Restaurant">Restaurant</option>
-            <option value="Café">Café</option>
-            <option value="Fast Food">Fast Food</option>
-            <option value="Fine Dining">Fine Dining</option>
-            <option value="Casual Dining">Casual Dining</option>
-            <option value="Buffet">Buffet</option>
-            <option value="Food Court">Food Court</option>
-            <option value="Bakery">Bakery</option>
-            <option value="Ice Cream & Desserts">Ice Cream & Desserts</option>
-            <option value="Juice Bar">Juice Bar</option>
-            <option value="Tea House">Tea House</option>
-            <option value="Pizza">Pizza</option>
-            <option value="Grill & BBQ">Grill & BBQ</option>
-            <option value="Seafood">Seafood</option>
-            <option value="Asian Cuisine">Asian Cuisine</option>
-            <option value="Indian Cuisine">Indian Cuisine</option>
-            <option value="Middle Eastern">Middle Eastern</option>
+          <optgroup label="Professional Services">
+            <option value="Consulting">Consulting</option>
+            <option value="IT Services">IT Services</option>
+            <option value="Marketing Agency">Marketing Agency</option>
+            <option value="Legal / Law Firm">Legal / Law Firm</option>
+            <option value="Accounting / Finance">Accounting / Finance</option>
+            <option value="Architecture / Design">Architecture / Design</option>
+            <option value="HR & Recruitment">HR & Recruitment</option>
           </optgroup>
-          <optgroup label="Retail & Services">
-            <option value="Supermarket">Supermarket</option>
-            <option value="Mini Mart">Mini Mart</option>
-            <option value="Grocery Store">Grocery Store</option>
-            <option value="Convenience Store">Convenience Store</option>
-            <option value="Pharmacy">Pharmacy</option>
-            <option value="Bakery & Sweets Shop">Bakery & Sweets Shop</option>
+          <optgroup label="Health & Wellness">
+            <option value="Clinic / Doctor">Clinic / Doctor</option>
+            <option value="Dental Clinic">Dental Clinic</option>
+            <option value="Spa & Beauty Salon">Spa & Beauty Salon</option>
+            <option value="Gym / Fitness">Gym / Fitness</option>
+            <option value="Physiotherapy">Physiotherapy</option>
+            <option value="Mental Health">Mental Health</option>
           </optgroup>
-          <optgroup label="Hospitality">
-            <option value="Hotel Restaurant">Hotel Restaurant</option>
-            <option value="Resort">Resort</option>
-            <option value="Guesthouse">Guesthouse</option>
+          <optgroup label="Home & Property">
+            <option value="Cleaning Service">Cleaning Service</option>
+            <option value="Plumbing & Electrical">Plumbing & Electrical</option>
+            <option value="AC Service & Repair">AC Service & Repair</option>
+            <option value="Renovation / Handyman">Renovation / Handyman</option>
+            <option value="Pest Control">Pest Control</option>
+            <option value="Security Services">Security Services</option>
+          </optgroup>
+          <optgroup label="Education & Training">
+            <option value="Tutoring">Tutoring</option>
+            <option value="Language School">Language School</option>
+            <option value="Driving School">Driving School</option>
+            <option value="Vocational Training">Vocational Training</option>
+            <option value="Music / Arts School">Music / Arts School</option>
+          </optgroup>
+          <optgroup label="Events & Creative">
+            <option value="Photography / Videography">Photography / Videography</option>
+            <option value="Event Planning">Event Planning</option>
+            <option value="Catering">Catering</option>
+            <option value="Entertainment">Entertainment</option>
+          </optgroup>
+          <optgroup label="Transport & Logistics">
+            <option value="Courier / Delivery">Courier / Delivery</option>
+            <option value="Moving Service">Moving Service</option>
+            <option value="Travel Agency">Travel Agency</option>
           </optgroup>
           <option value="custom">Other / Custom…</option>
         </select>
         <input type="text" id="f_type" placeholder="Describe business type…" style="display:none;margin-top:6px">
       </div>
-      <div class="fg"><label class="flbl">No. of Outlets</label><input type="text" id="f_branches" placeholder="e.g. 1, 3+"></div>
+      <div class="fg"><label class="flbl">No. of Listings / Services</label><input type="text" id="f_branches" placeholder="e.g. 5, 10+"></div>
     </div>
 
     <div class="fsec"><span>Status</span></div>
@@ -661,18 +723,18 @@ select option{background:var(--s2)}
     </div>
     <div style="font-size:11px;color:var(--t3);margin-top:4px" id="fuDateDisplay"></div>
 
-    <div class="fsec"><span>Current Setup</span></div>
+    <div class="fsec"><span>Existing Solution</span></div>
     <div class="frow">
-      <div class="fg"><label class="flbl">POS / Software Used</label><input type="text" id="f_soft" placeholder="e.g. Ewity, none"></div>
-      <div class="fg"><label class="flbl">Current Delivery App</label><input type="text" id="f_del" placeholder="e.g. Swiggy, in-house"></div>
+      <div class="fg"><label class="flbl">Current Platform / Software</label><input type="text" id="f_soft" placeholder="e.g. Booksy, none"></div>
+      <div class="fg"><label class="flbl">Other Tools / Integrations</label><input type="text" id="f_del" placeholder="e.g. Stripe, Google Calendar"></div>
     </div>
 
-    <div class="fsec"><span>Delivery Management</span></div>
-    <label class="flbl" style="margin-bottom:6px;display:block">How will delivery be managed on Flow?</label>
+    <div class="fsec"><span>Plan Interest</span></div>
+    <label class="flbl" style="margin-bottom:6px;display:block">Which plan is this customer interested in?</label>
     <div class="del-toggle" id="delToggle">
-      <div class="del-opt active-none" onclick="setDelMode('none')" id="dm_none">Not set</div>
-      <div class="del-opt" onclick="setDelMode('ewity')" id="dm_ewity">🚚 Managed by Ewity</div>
-      <div class="del-opt" onclick="setDelMode('self')" id="dm_self">🏠 Self-managed</div>
+      <div class="del-opt active-none" onclick="setDelMode('none')" id="dm_none">Not decided</div>
+      <div class="del-opt" onclick="setDelMode('ewity')" id="dm_ewity">⭐ Starter</div>
+      <div class="del-opt" onclick="setDelMode('self')" id="dm_self">🚀 Growth</div>
     </div>
     <input type="hidden" id="f_delMode" value="none">
 
@@ -815,7 +877,7 @@ select option{background:var(--s2)}
   <div class="mhd"><span class="mtitle" style="color:var(--purple)">✉ Email</span><button class="mcls" onclick="closeEm()">✕</button></div>
   <div class="mbody">
     <div class="fg" id="emCtcWrap"></div>
-    <div class="fg"><label class="flbl">Email Address</label><input type="email" id="em_to" placeholder="contact@restaurant.com" oninput="updMsg('em')"></div>
+    <div class="fg"><label class="flbl">Email Address</label><input type="email" id="em_to" placeholder="contact@business.com" oninput="updMsg('em')"></div>
     <div class="fg"><label class="flbl">Subject</label><input type="text" id="em_sub" placeholder="Subject line…"></div>
     <div class="fg"><label class="flbl">Message Preview</label><div class="em-preview" id="emPrev"></div></div>
     <div class="fg"><label class="flbl">Custom message (blank = template)</label><textarea id="em_c" style="min-height:55px" oninput="updMsg('em')"></textarea></div>
@@ -1395,7 +1457,7 @@ function loadTypeState(val){
   const sel=document.getElementById('f_type_sel');
   const inp=document.getElementById('f_type');
   // Try to match against known options
-  const knownOpts=['Restaurant','Café','Fast Food','Fine Dining','Casual Dining','Buffet','Food Court','Bakery','Ice Cream & Desserts','Juice Bar','Tea House','Pizza','Grill & BBQ','Seafood','Asian Cuisine','Indian Cuisine','Middle Eastern','Supermarket','Mini Mart','Grocery Store','Convenience Store','Pharmacy','Bakery & Sweets Shop','Hotel Restaurant','Resort','Guesthouse'];
+  const knownOpts=['Consulting','IT Services','Marketing Agency','Legal / Law Firm','Accounting / Finance','Architecture / Design','HR & Recruitment','Clinic / Doctor','Dental Clinic','Spa & Beauty Salon','Gym / Fitness','Physiotherapy','Mental Health','Cleaning Service','Plumbing & Electrical','AC Service & Repair','Renovation / Handyman','Pest Control','Security Services','Tutoring','Language School','Driving School','Vocational Training','Music / Arts School','Photography / Videography','Event Planning','Catering','Entertainment','Courier / Delivery','Moving Service','Travel Agency'];
   if(!val){sel.value='';inp.style.display='none';inp.value=''}
   else if(knownOpts.includes(val)){sel.value=val;inp.style.display='none';inp.value=val}
   else{sel.value='custom';inp.style.display='block';inp.value=val}
@@ -1719,11 +1781,11 @@ function buildCtcPicker(leadId,field,selFn){
 function buildMsg(leadId,type){
   const l=leads.find(x=>x.id===leadId);
   const name=l?.contacts?.[0]?.name||l?.deal||'[Name]';
-  const deal=l?.deal||'[Restaurant]';
+  const deal=l?.deal||'[Business]';
   if(type==='wa'||type==='tg'){
-    return `Hi ${name},\n\nI'm reaching out from Flow — we run the POS system at ${deal}. We've just launched online ordering that plugs directly into your existing system.\n\nOrders come straight into your POS — no new devices, no extra work for your team. As an existing customer, you get first access, completely free right now.\n\nWould you have 15 minutes this week? Happy to come by.`;
+    return `Hi ${name},\n\nI'm reaching out from Flow — we're a platform where ${deal} can list your services and get discovered by new customers.\n\nWe handle bookings, payments, and customer management all in one place. Getting listed is free to start.\n\nWould you have 15 minutes this week? Happy to walk you through it.`;
   }else{
-    return `Hi ${name},\n\nHope you're doing well. I'm reaching out from Flow regarding ${deal}.\n\nWe've recently launched an online ordering feature that integrates directly with your existing POS system — orders flow straight through your current setup with no new hardware and no changes to your workflow.\n\nAs one of our valued customers, you've been selected for early access, and it's completely free during our launch phase.\n\nI'd love to arrange a brief 15-minute walkthrough at your convenience.\n\nBest regards,\n[Your Name]\nFlow`;
+    return `Hi ${name},\n\nHope you're doing well. I'm reaching out from Flow regarding ${deal}.\n\nFlow is a service listing platform that helps businesses like yours get discovered online, manage bookings, and accept payments — all in one place. Your business gets its own professional profile page and booking flow.\n\nGetting started is completely free, and we'd love to have ${deal} on the platform.\n\nI'd love to arrange a brief 15-minute walkthrough at your convenience.\n\nBest regards,\n[Your Name]\nFlow`;
   }
 }
 
@@ -1777,7 +1839,7 @@ function openEm(id){
   document.getElementById('emCtcWrap').innerHTML=buildCtcPicker(id,'email','selEmCtc');
   const l=leads.find(x=>x.id===id);
   document.getElementById('em_to').value=l?.contacts?.[0]?.email||'';
-  document.getElementById('em_sub').value='Flow Online Ordering — Early Access for '+( l?.deal||'your restaurant');
+  document.getElementById('em_sub').value='Flow Platform — List Your Services Free | '+( l?.deal||'your business');
   document.getElementById('em_c').value='';
   updMsg('em');document.getElementById('emOv').classList.add('open');
 }
@@ -2026,7 +2088,7 @@ function renderAll(){
     const pds=[{k:'em',l:'Email'},{k:'wa',l:'WhatsApp'},{k:'vb',l:'Viber'},{k:'cl',l:'Called'},{k:'ip',l:'In Person'}];
     const pills=pds.map(p=>`<span class="pill ${l[p.k]?'done':''}">${l[p.k]?'✓ ':''}${p.l}</span>`).join('');
     const priTag=l.priority==='High'?'<span style="color:var(--accent);font-size:9px;margin-left:5px">● HIGH</span>':l.priority==='Low'?'<span style="color:var(--t3);font-size:9px;margin-left:5px">● LOW</span>':'';
-    const delBadgeMap={ewity:'<span class="del-badge del-ewity">🚚 Ewity Managed</span>',self:'<span class="del-badge del-self">🏠 Self-managed</span>'};
+    const delBadgeMap={ewity:'<span class="del-badge del-ewity">⭐ Starter</span>',self:'<span class="del-badge del-self">🚀 Growth</span>'};
     const delBadge=l.delMode&&l.delMode!=='none'?delBadgeMap[l.delMode]||'':'';
 
     // tickets
@@ -2051,9 +2113,9 @@ function renderAll(){
         <div class="cbody">
           <div class="irow"><span class="ilbl">Stage</span><span class="ival"><span class="sbadge ${scls(l.stage)}">${esc(l.stage)}</span></span></div>
           ${ctcH}
-          ${l.soft?`<div class="irow"><span class="ilbl">POS</span><span class="ival">${esc(l.soft)}</span></div>`:''}
-          ${l.del?`<div class="irow"><span class="ilbl">Delivery</span><span class="ival">${esc(l.del)}</span></div>`:''}
-          ${delBadge?`<div class="irow"><span class="ilbl">Managed</span><div class="ival">${delBadge}</div></div>`:''}
+          ${l.soft?`<div class="irow"><span class="ilbl">Platform</span><span class="ival">${esc(l.soft)}</span></div>`:''}
+          ${l.del?`<div class="irow"><span class="ilbl">Tools</span><span class="ival">${esc(l.del)}</span></div>`:''}
+          ${delBadge?`<div class="irow"><span class="ilbl">Plan</span><div class="ival">${delBadge}</div></div>`:''}
           <div class="irow"><span class="ilbl">Outreach</span><div class="ival"><div class="pills">${pills}</div></div></div>
           ${fuH}
           ${l.notes?`<div class="nsnip">${esc(l.notes)}</div>`:''}
