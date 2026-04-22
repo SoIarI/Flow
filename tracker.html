@@ -220,7 +220,6 @@ header{position:sticky;top:0;z-index:100;background:rgba(245,244,240,0.92);backd
 .card-tab .tab-count{background:var(--b2);border-radius:99px;padding:1px 5px;font-size:9px;min-width:16px;text-align:center}
 .card-tab.tab-tickets.active .tab-count{background:var(--accent-dim);color:var(--accent)}
 .card-tab.tab-log.active .tab-count{background:var(--info-dim);color:var(--info)}
-.card-tab.tab-log.active .tab-count{background:var(--info-dim);color:var(--info)}
 
 .drawer-overlay{position:fixed;inset:0;z-index:120;background:rgba(0,0,0,0.35);backdrop-filter:blur(4px);display:none}
 .drawer-overlay.open{display:block}
@@ -234,7 +233,6 @@ header{position:sticky;top:0;z-index:100;background:rgba(245,244,240,0.92);backd
 .dtab{flex:1;padding:9px 12px;font-family:'Inter',sans-serif;font-size:11px;color:var(--t3);cursor:pointer;text-align:center;transition:all 0.13s;border:none;background:transparent;border-bottom:2px solid transparent}
 .dtab:hover{color:var(--t2);background:var(--s2)}
 .dtab.active{color:var(--t1);border-bottom-color:var(--accent);background:var(--s2)}
-/* end drawer tabs */
 .drawer-body{flex:1;overflow-y:auto;display:flex;flex-direction:column}
 .drawer-pane{display:none;flex-direction:column;flex:1;padding:14px}
 .drawer-pane.active{display:flex}
@@ -1303,7 +1301,6 @@ function markSeen(leadId) {
   localStorage.setItem('pulra_fu_seen', JSON.stringify([...s]));
 }
 
-// (duplicate init removed — handled above)
 
 // ─────────────────────────────────────────────────────────────
 
