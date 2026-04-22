@@ -449,18 +449,18 @@ select option{background:var(--s2)}
 
 </style>
 
-<script>(function(){var t=localStorage.getItem('pulra_theme');if(t==='dark')document.documentElement.setAttribute('data-theme','dark');})()</script>
+<script>(function(){var t=localStorage.getItem('flow_theme');if(t==='dark')document.documentElement.setAttribute('data-theme','dark');})()</script>
 
 <!-- LOGIN SCREEN -->
 <div id="loginScreen" style="display:none">
   <div class="login-card">
-    <div class="login-logo"><div class="login-logo-dot"></div>PULRA</div>
+    <div class="login-logo"><div class="login-logo-dot"></div>FLOW</div>
     <div class="login-tagline">Lead Tracker — Team Access</div>
     <label class="login-label" for="loginPass">Password</label>
     <input type="password" class="login-input" id="loginPass" placeholder="Enter password…" onkeydown="if(event.key==='Enter')doLogin()">
     <button class="login-btn" onclick="doLogin()">Sign In →</button>
     <div class="login-err" id="loginErr">Incorrect password. Try again.</div>
-    <div class="login-footer">Access is restricted to the Pulra team.<br>Contact your admin for credentials.</div>
+    <div class="login-footer">Access is restricted to the Flow team.<br>Contact your admin for credentials.</div>
   </div>
 </div>
 
@@ -490,12 +490,12 @@ select option{background:var(--s2)}
 </div>
 
 <header>
-  <div class="logo"><div class="logo-dot"></div>PULRA<span class="logo-sub">Leads</span></div>
+  <div class="logo"><div class="logo-dot"></div>FLOW<span class="logo-sub">Leads</span></div>
   <div class="header-r">
     <div class="sync-status"><div class="sync-dot" id="syncDot"></div><span id="syncLbl">connecting…</span></div>
     <div style="display:flex;align-items:center;gap:7px;background:var(--s2);border:1px solid var(--b1);border-radius:99px;padding:5px 14px 5px 9px">
       <div style="width:22px;height:22px;border-radius:50%;background:var(--accent-dim);border:1px solid rgba(91,106,240,0.3);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--accent);font-weight:700" id="userAvatar">P</div>
-      <span style="font-size:12px;color:var(--t2);font-weight:500" id="userName">Pulra</span>
+      <span style="font-size:12px;color:var(--t2);font-weight:500" id="userName">Flow</span>
     </div>
     <button id="themeToggleBtn" class="btn ghost" onclick="toggleTheme()" title="Toggle light/dark mode" style="width:32px;padding:0;justify-content:center;font-size:15px">☾</button>
     <button class="settings-btn" onclick="openNotifPanel()" title="Notification Settings">⚙ Notifications</button>
@@ -668,7 +668,7 @@ select option{background:var(--s2)}
     </div>
 
     <div class="fsec"><span>Delivery Management</span></div>
-    <label class="flbl" style="margin-bottom:6px;display:block">How will delivery be managed on Pulra?</label>
+    <label class="flbl" style="margin-bottom:6px;display:block">How will delivery be managed on Flow?</label>
     <div class="del-toggle" id="delToggle">
       <div class="del-opt active-none" onclick="setDelMode('none')" id="dm_none">Not set</div>
       <div class="del-opt" onclick="setDelMode('ewity')" id="dm_ewity">🚚 Managed by Ewity</div>
@@ -912,11 +912,11 @@ select option{background:var(--s2)}
 // SUPABASE + AUTH + SYNC LAYER
 // ═══════════════════════════════════════════════════════════
 
-const CFG_KEY = 'pulra_cfg';
-const AUTH_KEY = 'pulra_auth';
-const APP_PASSWORD = 'Pulra2024';
+const CFG_KEY = 'flow_cfg';
+const AUTH_KEY = 'flow_auth';
+const APP_PASSWORD = 'Flow2024';
 const APP_VERSION = '2.0.0';
-const VERSION_URL = 'https://raw.githubusercontent.com/YOUR_USERNAME/pulra-leads/main/version.json';
+const VERSION_URL = 'https://raw.githubusercontent.com/YOUR_USERNAME/flow-leads/main/version.json';
 
 // ── AUTH ──────────────────────────────────────────────────────
 function isLoggedIn() {
@@ -943,7 +943,7 @@ function doLogin() {
 }
 
 function doLogout() {
-  if (!confirm('Sign out? You will need to enter the password again to access Pulra Leads.')) return;
+  if (!confirm('Sign out? You will need to enter the password again to access Flow Leads.')) return;
   localStorage.removeItem(AUTH_KEY);
   location.reload();
 }
@@ -1006,7 +1006,7 @@ function initSupabase(url, key) {
 }
 
 // ── NOTIFICATION SETTINGS ─────────────────────────────────────
-const NOTIF_KEY = 'pulra_notif_v1';
+const NOTIF_KEY = 'flow_notif_v1';
 const NOTIF_DEFAULTS = {
   token: '', chat: '',
   new_lead: true, stage: true, fu_today: true, fu_over: true,
@@ -1050,7 +1050,7 @@ async function testTelegram() {
   if (!token || !chat) { toast('⚠ Enter token and chat ID first'); return; }
   const btn = document.querySelector('.np-test-btn');
   btn.textContent = 'Sending…'; btn.disabled = true;
-  const res = await sendTelegramMsg(token, chat, '✅ Pulra Lead Tracker — test notification. Connection working!');
+  const res = await sendTelegramMsg(token, chat, '✅ Flow Lead Tracker — test notification. Connection working!');
   btn.textContent = 'Send test message ↗'; btn.disabled = false;
   toast(res ? '✓ Test message sent' : '⚠ Failed — check token and chat ID');
 }
@@ -1303,19 +1303,19 @@ function reloadForUpdate() { location.reload(true); }
 
 // ── SEEN FOLLOW-UPS (Supabase-backed) ───────────────────────
 function getSeenIds() {
-  try { return new Set(JSON.parse(localStorage.getItem('pulra_fu_seen')||'[]')); } catch { return new Set(); }
+  try { return new Set(JSON.parse(localStorage.getItem('flow_fu_seen')||'[]')); } catch { return new Set(); }
 }
 
 function markSeen(leadId) {
   const s = getSeenIds(); s.add(leadId);
-  localStorage.setItem('pulra_fu_seen', JSON.stringify([...s]));
+  localStorage.setItem('flow_fu_seen', JSON.stringify([...s]));
 }
 
 
 // ─────────────────────────────────────────────────────────────
 
 
-const KEY='pulra_v4';
+const KEY='flow_v4';
 let leads=[],editId=null,tickLeadId=null,editTickId=null,msgLeadId=null;
 let ctcs=[],fuDate='',delMode='none';
 
@@ -1721,9 +1721,9 @@ function buildMsg(leadId,type){
   const name=l?.contacts?.[0]?.name||l?.deal||'[Name]';
   const deal=l?.deal||'[Restaurant]';
   if(type==='wa'||type==='tg'){
-    return `Hi ${name},\n\nI'm reaching out from Pulra — we run the POS system at ${deal}. We've just launched online ordering that plugs directly into your existing system.\n\nOrders come straight into your POS — no new devices, no extra work for your team. As an existing customer, you get first access, completely free right now.\n\nWould you have 15 minutes this week? Happy to come by.`;
+    return `Hi ${name},\n\nI'm reaching out from Flow — we run the POS system at ${deal}. We've just launched online ordering that plugs directly into your existing system.\n\nOrders come straight into your POS — no new devices, no extra work for your team. As an existing customer, you get first access, completely free right now.\n\nWould you have 15 minutes this week? Happy to come by.`;
   }else{
-    return `Hi ${name},\n\nHope you're doing well. I'm reaching out from Pulra regarding ${deal}.\n\nWe've recently launched an online ordering feature that integrates directly with your existing POS system — orders flow straight through your current setup with no new hardware and no changes to your workflow.\n\nAs one of our valued customers, you've been selected for early access, and it's completely free during our launch phase.\n\nI'd love to arrange a brief 15-minute walkthrough at your convenience.\n\nBest regards,\n[Your Name]\nPulra`;
+    return `Hi ${name},\n\nHope you're doing well. I'm reaching out from Flow regarding ${deal}.\n\nWe've recently launched an online ordering feature that integrates directly with your existing POS system — orders flow straight through your current setup with no new hardware and no changes to your workflow.\n\nAs one of our valued customers, you've been selected for early access, and it's completely free during our launch phase.\n\nI'd love to arrange a brief 15-minute walkthrough at your convenience.\n\nBest regards,\n[Your Name]\nFlow`;
   }
 }
 
@@ -1777,7 +1777,7 @@ function openEm(id){
   document.getElementById('emCtcWrap').innerHTML=buildCtcPicker(id,'email','selEmCtc');
   const l=leads.find(x=>x.id===id);
   document.getElementById('em_to').value=l?.contacts?.[0]?.email||'';
-  document.getElementById('em_sub').value='Pulra Online Ordering — Early Access for '+( l?.deal||'your restaurant');
+  document.getElementById('em_sub').value='Flow Online Ordering — Early Access for '+( l?.deal||'your restaurant');
   document.getElementById('em_c').value='';
   updMsg('em');document.getElementById('emOv').classList.add('open');
 }
@@ -1785,7 +1785,7 @@ function selEmCtc(el,v){document.querySelectorAll('#emCtcWrap .ctc-opt').forEach
 function sendEm(){
   const to=document.getElementById('em_to').value.trim();
   if(!to){toast('⚠ Enter an email address');return}
-  const sub=encodeURIComponent(document.getElementById('em_sub').value||'Pulra Online Ordering');
+  const sub=encodeURIComponent(document.getElementById('em_sub').value||'Flow Online Ordering');
   const body=encodeURIComponent(document.getElementById('emPrev').textContent);
   window.open('mailto:'+to+'?subject='+sub+'&body='+body,'_self');
   markContacted(emLeadId);closeEm();toast('✓ Email client opened');
@@ -1798,7 +1798,7 @@ function markContacted(id){
 
 /* ── REMINDERS ── */
 /* ── FOLLOW-UP PANEL ── */
-const SEEN_KEY = 'pulra_fu_seen';
+const SEEN_KEY = 'flow_fu_seen';
 let fuPanelOpen = false;
 let fuTabActive = 'all';
 
@@ -2094,7 +2094,7 @@ function exportCSV(){
   });
   const a=document.createElement('a');
   a.href=URL.createObjectURL(new Blob([rows.join('\n')],{type:'text/csv;charset=utf-8;'}));
-  a.download='pulra-leads-'+todayS()+'.csv';a.click();
+  a.download='flow-leads-'+todayS()+'.csv';a.click();
   toast('✓ Exported '+leads.length+' leads');
 }
 
@@ -2380,7 +2380,7 @@ function scheduleDailyCheck() {
 }
 
 function runFollowUpCheck() {
-  const todayKey = 'pulra_fu_notif_' + todayS();
+  const todayKey = 'flow_fu_notif_' + todayS();
   if (localStorage.getItem(todayKey)) return; // already notified today
   localStorage.setItem(todayKey, '1');
   const s = loadNotifSettings();
@@ -2561,7 +2561,7 @@ async function confirmImport() {
 }
 
 /* ── THEME ── */
-const THEME_KEY = 'pulra_theme';
+const THEME_KEY = 'flow_theme';
 function initTheme() {
   const saved = localStorage.getItem(THEME_KEY) || 'light';
   document.documentElement.setAttribute('data-theme', saved);

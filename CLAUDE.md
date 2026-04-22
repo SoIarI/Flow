@@ -1,7 +1,7 @@
 # Flow Lead Tracker — Project Context
 
 ## Overview
-Single-file CRM for Pulra's restaurant sales team. Tracks leads, contacts, tickets, and interaction logs. Password-protected, multi-user (shared Supabase DB), realtime sync across browser tabs/users.
+Single-file CRM for Flow's restaurant sales team. Tracks leads, contacts, tickets, and interaction logs. Password-protected, multi-user (shared Supabase DB), realtime sync across browser tabs/users.
 
 - **File**: `tracker.html` (~2700 lines, everything inline)
 - **Deployed**: GitHub Pages → https://SoIarI.github.io/Flow/
@@ -13,7 +13,7 @@ Single-file CRM for Pulra's restaurant sales team. Tracks leads, contacts, ticke
 - Pure HTML/CSS/JS — no build step, no framework
 - **Database**: Supabase (anon key, no row-level security assumed)
 - **Realtime**: Supabase `postgres_changes` channel on all 4 tables
-- **Auth**: simple password check (`APP_PASSWORD = 'Pulra2024'`), stored in `localStorage`
+- **Auth**: simple password check (`APP_PASSWORD = 'Flow2024'`), stored in `localStorage`
 - **Notifications**: direct Telegram Bot API calls from the browser (per-user bot token + chat ID)
 
 ---
@@ -43,7 +43,7 @@ Each color has a `-dim` counterpart (10% opacity version) for backgrounds.
 Accent/status colors are shared between themes.
 
 ### Theme persistence
-- `localStorage` key: `pulra_theme` (`'light'` or `'dark'`)
+- `localStorage` key: `flow_theme` (`'light'` or `'dark'`)
 - FOUC-prevention: inline `<script>` before body sets `data-theme` on `<html>` immediately
 - Toggle button: `#themeToggleBtn` in header (☾ / ☀)
 - Wave animation: canvas `#themeWaveCanvas` (fixed, z-index 9999, pointer-events none)
@@ -145,7 +145,7 @@ Log types: `note | call | meeting | email | whatsapp | visit | other`
 ## Key Functions
 
 ### Auth / Setup
-- `isLoggedIn()` — checks `localStorage('pulra_auth') === '1'`
+- `isLoggedIn()` — checks `localStorage('flow_auth') === '1'`
 - `doLogin()` / `doLogout()` — password check / clear + reload
 - `checkConfig()` — shows config screen if no Supabase creds saved
 - `saveConfig()` — validates + saves Supabase URL/key/name, calls `initAndLoad()`
@@ -212,7 +212,7 @@ Log types: `note | call | meeting | email | whatsapp | visit | other`
 - Trigger keys: `new_lead | stage | fu_today | fu_over | ticket | ticket_status | meeting | log | closed`
 
 ### Theme
-- `initTheme()` — reads `localStorage('pulra_theme')`, sets `data-theme`, updates button
+- `initTheme()` — reads `localStorage('flow_theme')`, sets `data-theme`, updates button
 - `toggleTheme()` — canvas wave animation (680ms) + theme switch at midpoint
 
 ### Utility
@@ -236,14 +236,14 @@ Log types: `note | call | meeting | email | whatsapp | visit | other`
 
 ## Constants & localStorage Keys
 ```js
-CFG_KEY     = 'pulra_cfg'      // { url, key, name }
-AUTH_KEY    = 'pulra_auth'     // '1' if logged in
-NOTIF_KEY   = 'pulra_notif_v1' // notification settings object
-THEME_KEY   = 'pulra_theme'    // 'light' | 'dark'
-KEY         = 'pulra_v4'       // legacy (unused, Supabase is source of truth)
-APP_PASSWORD = 'Pulra2024'
+CFG_KEY     = 'flow_cfg'      // { url, key, name }
+AUTH_KEY    = 'flow_auth'     // '1' if logged in
+NOTIF_KEY   = 'flow_notif_v1' // notification settings object
+THEME_KEY   = 'flow_theme'    // 'light' | 'dark'
+KEY         = 'flow_v4'       // legacy (unused, Supabase is source of truth)
+APP_PASSWORD = 'Flow2024'
 APP_VERSION  = '2.0.0'
-// Also: 'pulra_fu_seen', 'pulra_fu_notif_YYYY-MM-DD' (daily check guard)
+// Also: 'flow_fu_seen', 'flow_fu_notif_YYYY-MM-DD' (daily check guard)
 ```
 
 ---
@@ -339,7 +339,7 @@ APP_VERSION  = '2.0.0'
 ---
 
 ## Business Context
-- **Product**: Pulra — online ordering platform for Maldivian restaurants
+- **Product**: Flow — online ordering platform for Maldivian restaurants
 - **Locations**: Malé, Hulhumalé, Villimalé (island-based, multi-location leads)
 - **Team**: small sales team, each member configures their own Telegram notifications
 - **Delivery modes**: "Managed by Ewity" (sister product) / "Self-managed" / Not set
