@@ -1389,13 +1389,19 @@ async function saveLeadToSupabase(data, editId) {
     outreach_vb: data.vb,
     outreach_cl: data.cl,
     outreach_ip: data.ip,
-    onboarding_data: data.onboarding ? JSON.stringify(data.onboarding) : null,
   };
+  // Attempt to include onboarding_data; fall back silently if column doesn't exist yet
+  const rowWithOb = data.onboarding
+    ? { ...row, onboarding_data: JSON.stringify(data.onboarding) }
+    : row;
   let leadId = editId;
   if (editId) {
     const prevLead = leads.find(x => x.id === editId);
-    const { error } = await sb.from('leads').update(row).eq('id', editId);
-    if (error) { setSyncStatus('err', 'save failed'); toast('⚠ Save failed: ' + error.message); return false; }
+    let res = await sb.from('leads').update(rowWithOb).eq('id', editId);
+    if (res.error && res.error.message && res.error.message.includes('onboarding_data')) {
+      res = await sb.from('leads').update(row).eq('id', editId);
+    }
+    if (res.error) { setSyncStatus('err', 'save failed'); toast('⚠ Save failed: ' + res.error.message); return false; }
     // Stage change notification
     if (prevLead && prevLead.stage !== row.stage) {
       const stageEmoji = {'New':'🆕','Contacted':'📞','Interested':'👀','Meeting Set':'📅','Negotiating':'🤝','Closed':'✅','Lost':'❌','No Response':'🔇','On Hold':'⏸'};
@@ -1404,9 +1410,12 @@ async function saveLeadToSupabase(data, editId) {
         `${e} <b>Stage Updated</b>\n<b>${row.deal}</b>\n${prevLead.stage} → <b>${row.stage}</b>`);
     }
   } else {
-    const { data: ins, error } = await sb.from('leads').insert(row).select().single();
-    if (error) { setSyncStatus('err', 'save failed'); toast('⚠ Save failed: ' + error.message); return false; }
-    leadId = ins.id;
+    let res = await sb.from('leads').insert(rowWithOb).select().single();
+    if (res.error && res.error.message && res.error.message.includes('onboarding_data')) {
+      res = await sb.from('leads').insert(row).select().single();
+    }
+    if (res.error) { setSyncStatus('err', 'save failed'); toast('⚠ Save failed: ' + res.error.message); return false; }
+    leadId = res.data.id;
   }
   // Save contacts (delete all then re-insert)
   await sb.from('contacts').delete().eq('lead_id', leadId);
