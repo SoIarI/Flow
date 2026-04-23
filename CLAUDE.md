@@ -1,11 +1,19 @@
 # Flow Lead Tracker — Project Context
 
 ## Overview
-Single-file CRM for Flow's restaurant sales team. Tracks leads, contacts, tickets, and interaction logs. Password-protected, multi-user (shared Supabase DB), realtime sync across browser tabs/users.
+Single-file CRM for Flow's service-platform sales team. Tracks leads, contacts, tickets, onboarding, and interaction logs. Password-protected, multi-user (shared Supabase DB), realtime sync across browser tabs/users.
 
-- **File**: `tracker.html` (~2700 lines, everything inline)
+- **File**: `tracker.html` (~3100 lines, everything inline)
 - **Deployed**: GitHub Pages → https://SoIarI.github.io/Flow/
 - **Push to `main`** → auto-deploys in ~60 seconds
+
+---
+
+## Required DB Migration (run once in Supabase SQL editor)
+```sql
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS onboarding_data jsonb DEFAULT '{}';
+```
+This stores Pulra + Flow onboarding details per lead as JSON.
 
 ---
 
@@ -15,6 +23,7 @@ Single-file CRM for Flow's restaurant sales team. Tracks leads, contacts, ticket
 - **Realtime**: Supabase `postgres_changes` channel on all 4 tables
 - **Auth**: simple password check (`APP_PASSWORD = 'Flow2024'`), stored in `localStorage`
 - **Notifications**: direct Telegram Bot API calls from the browser (per-user bot token + chat ID)
+- **SheetJS** (`xlsx@0.18.5` via CDN) — Excel import with column mapping
 
 ---
 
@@ -67,6 +76,11 @@ delMode      // delivery mode string in lead modal
 drawerLeadId // currently open drawer lead ID
 drawerTab    // 'tickets' or 'log'
 fuPanelOpen  // boolean, follow-up panel state
+currentView  // 'leads' | 'tickets' — active view mode
+tvFilters    // { status, type, search } — tickets view filters
+STAGES       // const array of all stage strings
+_importHeaders // xlsx parsed header row
+_importRawRows // xlsx parsed data rows (array of arrays)
 ```
 
 ---
@@ -92,7 +106,11 @@ fuPanelOpen  // boolean, follow-up panel state
   createdAt, updatedAt, createdBy,
   contacts: [{ name, role, phone, email, tg, wa }],
   tickets: [{ id, type, status, title, date, time, assigned, priority, notes }],
-  log: [{ id, type, text, date }]
+  log: [{ id, type, text, date }],
+  onboarding: {
+    pulra: { assigned, status, notes },  // status: ''|'in_progress'|'completed'|'on_hold'
+    flow:  { assigned, status, notes }
+  }
 }
 ```
 
@@ -230,11 +248,31 @@ Log types: `note | call | meeting | email | whatsapp | visit | other`
 - `toast(msg, ms=2400)` → bottom toast notification
 - `setSyncStatus(state, label)` — updates `#syncDot` and `#syncLbl`
 
-### CSV
+### CSV / Excel Import
 - `exportCSV()` — generates and downloads CSV of all leads
-- `openImportModal()` / `confirmImport()` — bulk import from CSV
-- `handleCSVFile(input)` / `handleCSVDrop(event)` — parse CSV, populate `_importRows`
-- `splitCSVLine(line)` — handles quoted fields
+- `openImportModal()` / `confirmImport()` — bulk import from CSV (auto-mapped columns)
+- `handleCSVFile(input)` / `handleCSVDrop(event)` — routes to CSV or XLSX processor
+- `processXLSXFile(file)` — parses xlsx with SheetJS, opens mapping modal
+- `openImportMap(filename, rowCount)` — shows column-mapping modal (auto-detects best matches)
+- `confirmMappedImport()` — reads mapping selects, builds `_importRows`, calls `confirmImport()`
+- `closeImportMap()` — returns to main import modal
+- `splitCSVLine(line)` — handles quoted fields in CSV
+
+### Stage Inline Change
+- `quickChangeStage(leadId, stage)` — optimistic stage update + Supabase save + notification
+- `toggleStageDropdown(event, leadId)` — show/hide stage picker on a card (closes others)
+- `closeStageDropdown(leadId)` — hides the dropdown for a specific lead
+
+### Onboarding
+- `toggleObSection(platform)` — expand/collapse 'pulra' or 'flow' onboarding accordion
+- `getOnboardingData()` → `{ pulra: {assigned,status,notes}, flow: {assigned,status,notes} }`
+- `loadOnboardingData(ob)` — populates form fields; auto-opens sections that have data
+
+### Tickets View (global)
+- `setView(view)` — switches between 'leads' and 'tickets' views; manages toolbar visibility
+- `applyTvFilters()` — reads tvStatus/tvType/tvSearch and re-renders
+- `renderAllTickets()` — flat list of all tickets across all leads; sortable, filterable
+- `cycleTicketStatusGlobal(leadId, tickId)` — cycles status then refreshes tickets view
 
 ---
 

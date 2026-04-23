@@ -7,6 +7,8 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@500;700;800&display=swap" rel="stylesheet">
 <!-- Supabase JS client -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<!-- SheetJS for Excel import -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 /* ── CONFIG SCREEN ── */
 #configScreen{position:fixed;inset:0;background:var(--bg);z-index:500;display:flex;align-items:center;justify-content:center;padding:20px}
@@ -448,6 +450,49 @@ select option{background:var(--s2)}
 .ctc-card{background:var(--s2);border:1px solid var(--b1);border-radius:var(--r);padding:12px 13px}
 
 /* ── MOBILE ── */
+/* ── STAGE INLINE CHANGE ── */
+.cstage-row{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.stage-btn{background:none;border:none;padding:0;cursor:pointer;display:inline-flex;align-items:center;gap:3px;line-height:1}
+.stage-btn:hover .sbadge{opacity:0.82;box-shadow:0 0 0 2px var(--b2)}
+.stage-chevron{font-size:8px;color:var(--t3);pointer-events:none}
+.stage-dropdown{display:none;position:absolute;top:calc(100% + 5px);left:0;z-index:300;background:var(--s1);border:1px solid var(--b2);border-radius:10px;box-shadow:0 8px 28px rgba(0,0,0,0.13);min-width:170px;padding:5px;overflow:hidden}
+.sd-opt{padding:6px 9px;border-radius:6px;cursor:pointer;transition:background 0.1s;display:flex;align-items:center}
+.sd-opt:hover{background:var(--s2)}
+.sd-active{background:var(--accent-dim)}
+
+/* ── VIEW TABS ── */
+.view-tabs{display:flex;gap:2px;background:var(--s2);border:1px solid var(--b1);border-radius:var(--r);padding:2px;flex-shrink:0}
+.view-tab{padding:5px 14px;border-radius:5px;font-size:11px;font-weight:500;color:var(--t3);cursor:pointer;border:none;background:transparent;transition:all 0.13s;white-space:nowrap;font-family:'Inter',sans-serif}
+.view-tab.active{background:var(--s1);color:var(--t1);box-shadow:0 1px 4px rgba(0,0,0,0.08)}
+.view-tab:hover:not(.active){color:var(--t2)}
+
+/* ── ALL TICKETS VIEW ── */
+.tv-ticket{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:13px 16px;display:flex;align-items:flex-start;gap:12px;transition:border-color 0.15s,box-shadow 0.15s}
+.tv-ticket:hover{border-color:var(--b2);box-shadow:0 2px 8px rgba(0,0,0,0.06)}
+.tv-toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--b1);align-items:center}
+
+/* ── ONBOARDING SECTION ── */
+.ob-wrap{display:flex;flex-direction:column;gap:8px}
+.ob-section{border:1px solid var(--b1);border-radius:var(--r);overflow:hidden}
+.ob-head{padding:10px 14px;background:var(--s2);display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;transition:background 0.13s}
+.ob-head:hover{background:var(--s3)}
+.ob-title{font-size:12px;font-weight:500;color:var(--t1);display:flex;align-items:center;gap:7px}
+.ob-chevron{font-size:10px;color:var(--t3)}
+.ob-body{padding:14px;display:flex;flex-direction:column;gap:10px;border-top:1px solid var(--b1)}
+
+/* ── THEME CIRCLE OVERLAY ── */
+#themeCircleOverlay{position:fixed;inset:0;z-index:9999;pointer-events:none;display:none}
+
+/* ── CARD POLISH ── */
+.cdeal{font-family:'Syne',sans-serif;font-weight:700;font-size:14px;color:var(--t1);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.3}
+.cbody{padding:12px 15px;display:flex;flex-direction:column;gap:8px}
+.nsnip{font-size:10.5px;color:var(--t3);line-height:1.55;border-left:2px solid var(--b2);padding-left:8px;display:-webkit-box;-webkit-line-clamp:2;line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-style:italic}
+
+/* ── IMPORT MAPPING MODAL ── */
+.map-row{display:flex;align-items:center;gap:10px;padding:5px 0}
+.map-lbl{font-size:11px;color:var(--t2);width:150px;flex-shrink:0}
+.map-req{color:var(--danger)}
+
 @media (max-width: 660px){
   /* Hide verbose labels in header */
   .ml-hide{display:none}
@@ -583,9 +628,14 @@ select option{background:var(--s2)}
 </div>
 
 <div class="toolbar">
-  <button class="btn primary" onclick="openLeadModal()">＋ New Lead</button>
+  <div class="view-tabs">
+    <button class="view-tab active" data-view="leads" onclick="setView('leads')">Leads</button>
+    <button class="view-tab" data-view="tickets" onclick="setView('tickets')">Tickets</button>
+  </div>
   <div class="tsep"></div>
-  <div class="sbox"><input type="text" id="qS" placeholder="Search leads…" oninput="renderAll()"></div>
+  <button class="btn primary" id="newLeadBtn" onclick="openLeadModal()">＋ New Lead</button>
+  <div class="tsep"></div>
+  <div class="sbox" id="leadsSearchBox"><input type="text" id="qS" placeholder="Search leads…" oninput="renderAll()"></div>
   <select class="sel" id="qSt" onchange="renderAll()">
     <option value="">All stages</option>
     <option>New</option><option>Contacted</option><option>Interested</option>
@@ -601,19 +651,47 @@ select option{background:var(--s2)}
     <option>High</option><option>Normal</option><option>Low</option>
   </select>
   <div class="tsep"></div>
-  <button class="btn ghost" onclick="exportCSV()">⬇ Export CSV</button>
-  <button class="btn ghost" onclick="openImportModal()">⬆ Import CSV</button>
-  <input type="file" id="csvFileInput" accept=".csv" style="display:none" onchange="handleCSVFile(this)">
-  <button class="btn ghost" onclick="clearAll()" style="margin-left:auto;color:var(--danger);border-color:rgba(220,79,79,0.25)" title="Delete all records from database">⚠ Clear Database</button>
+  <button class="btn ghost" onclick="exportCSV()">⬇ Export</button>
+  <button class="btn ghost" onclick="openImportModal()">⬆ Import</button>
+  <input type="file" id="csvFileInput" accept=".csv,.xlsx,.xls" style="display:none" onchange="handleCSVFile(this)">
+  <button class="btn ghost" onclick="clearAll()" style="margin-left:auto;color:var(--danger);border-color:rgba(220,79,79,0.25)" title="Delete all records from database">⚠ Clear DB</button>
 </div>
 
 <div class="stats-bar" id="statsBar"></div>
 
 <div class="main">
-  <div class="grid" id="leadsGrid"></div>
-  <div class="empty" id="emptyState" style="display:none">
-    <div class="eico">◎</div><h3>No leads yet</h3>
-    <p>Add your first business to get started.<br>All data syncs automatically across your team.</p>
+  <div id="leadsArea">
+    <div class="grid" id="leadsGrid"></div>
+    <div class="empty" id="emptyState" style="display:none">
+      <div class="eico">◎</div><h3>No leads yet</h3>
+      <p>Add your first business to get started.<br>All data syncs automatically across your team.</p>
+    </div>
+  </div>
+  <div id="ticketsArea" style="display:none">
+    <div class="tv-toolbar">
+      <select class="sel" id="tvStatus" onchange="applyTvFilters()">
+        <option value="">All statuses</option>
+        <option value="pending">Pending</option>
+        <option value="scheduled">Scheduled</option>
+        <option value="inprogress">In Progress</option>
+        <option value="completed">Completed</option>
+        <option value="cancelled">Cancelled</option>
+      </select>
+      <select class="sel" id="tvType" onchange="applyTvFilters()">
+        <option value="">All types</option>
+        <option value="meeting">Meeting</option>
+        <option value="training">Training</option>
+        <option value="onboarding">Onboarding</option>
+        <option value="support">Support</option>
+        <option value="followup">Follow-up Call</option>
+        <option value="demo">Demo</option>
+        <option value="contract">Contract</option>
+        <option value="installation">Installation</option>
+        <option value="other">Other</option>
+      </select>
+      <div class="sbox" style="min-width:160px"><input type="text" id="tvSearch" placeholder="Search by lead…" oninput="applyTvFilters()"></div>
+    </div>
+    <div id="ticketsGrid" style="display:flex;flex-direction:column;gap:6px"></div>
   </div>
 </div>
 
@@ -737,6 +815,50 @@ select option{background:var(--s2)}
       <div class="del-opt" onclick="setDelMode('self')" id="dm_self">🚀 Growth</div>
     </div>
     <input type="hidden" id="f_delMode" value="none">
+
+    <div class="fsec"><span>Onboarding</span></div>
+    <div class="ob-wrap">
+      <div class="ob-section">
+        <div class="ob-head" onclick="toggleObSection('pulra')">
+          <span class="ob-title">📦 Pulra Onboarding</span>
+          <span class="ob-chevron" id="ob-pulra-chevron">▾</span>
+        </div>
+        <div class="ob-body" id="ob-pulra-body" style="display:none">
+          <div class="frow">
+            <div class="fg"><label class="flbl">Assigned To</label><input type="text" id="ob_pulra_assigned" placeholder="Team member…"></div>
+            <div class="fg"><label class="flbl">Status</label>
+              <select id="ob_pulra_status">
+                <option value="">Not started</option>
+                <option value="in_progress">In Progress</option>
+                <option value="completed">Completed</option>
+                <option value="on_hold">On Hold</option>
+              </select>
+            </div>
+          </div>
+          <div class="fg"><label class="flbl">Notes</label><textarea id="ob_pulra_notes" placeholder="Setup details, menu, checklist…" style="min-height:55px"></textarea></div>
+        </div>
+      </div>
+      <div class="ob-section">
+        <div class="ob-head" onclick="toggleObSection('flow')">
+          <span class="ob-title">🌊 Flow Onboarding</span>
+          <span class="ob-chevron" id="ob-flow-chevron">▾</span>
+        </div>
+        <div class="ob-body" id="ob-flow-body" style="display:none">
+          <div class="frow">
+            <div class="fg"><label class="flbl">Assigned To</label><input type="text" id="ob_flow_assigned" placeholder="Team member…"></div>
+            <div class="fg"><label class="flbl">Status</label>
+              <select id="ob_flow_status">
+                <option value="">Not started</option>
+                <option value="in_progress">In Progress</option>
+                <option value="completed">Completed</option>
+                <option value="on_hold">On Hold</option>
+              </select>
+            </div>
+          </div>
+          <div class="fg"><label class="flbl">Notes</label><textarea id="ob_flow_notes" placeholder="Profile setup, services, checklist…" style="min-height:55px"></textarea></div>
+        </div>
+      </div>
+    </div>
 
     <div class="fsec">
       <span>Contacts</span>
@@ -891,29 +1013,44 @@ select option{background:var(--s2)}
 </div>
 
 
-<!-- IMPORT CSV MODAL -->
+<!-- IMPORT MODAL -->
 <div class="overlay" id="importOv" onclick="if(event.target.id==='importOv')closeImportModal()">
 <div class="modal sm">
-  <div class="mhd"><span class="mtitle">Import CSV</span><button class="mcls" onclick="closeImportModal()">&#x2715;</button></div>
+  <div class="mhd"><span class="mtitle">Import Leads</span><button class="mcls" onclick="closeImportModal()">&#x2715;</button></div>
   <div class="mbody">
-    <p style="font-size:12px;color:var(--t2);line-height:1.7">Upload a CSV file to bulk-import leads. Columns should match the export format, or use at minimum: <strong>Business Name</strong>, and optionally Location, Type, Stage, Priority, Notes.</p>
+    <p style="font-size:12px;color:var(--t2);line-height:1.7">Upload a CSV or Excel file. Excel files will show a column-mapping step. CSV files are auto-mapped.</p>
     <div class="import-drop" id="importDrop" onclick="document.getElementById('csvFileInput2').click()" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="this.classList.remove('drag');handleCSVDrop(event)">
       <div class="import-drop-icon">📄</div>
-      <div style="font-size:13px;font-weight:500;margin-bottom:4px">Drop CSV file here or click to browse</div>
-      <div style="font-size:11px">Supports .csv files</div>
+      <div style="font-size:13px;font-weight:500;margin-bottom:4px">Drop file here or click to browse</div>
+      <div style="font-size:11px">Supports .csv and .xlsx / .xls</div>
     </div>
-    <input type="file" id="csvFileInput2" accept=".csv" style="display:none" onchange="handleCSVFile(this)">
+    <input type="file" id="csvFileInput2" accept=".csv,.xlsx,.xls" style="display:none" onchange="handleCSVFile(this)">
     <div class="import-status" id="importStatus"></div>
     <details style="margin-top:4px">
-      <summary style="font-size:11px;color:var(--t3);cursor:pointer;padding:6px 0">Column format guide</summary>
+      <summary style="font-size:11px;color:var(--t3);cursor:pointer;padding:6px 0">CSV column format guide</summary>
       <div style="font-size:11px;color:var(--t3);line-height:1.8;margin-top:8px;background:var(--s2);padding:10px 14px;border-radius:8px">
-        Business Name · Locations · Business Type · Branches · Stage · Priority · C1 Name · C1 Role · C1 Phone · C1 Email · C1 Telegram · C1 WhatsApp · Current POS · Current Delivery App · Notes
+        Business Name · Locations · Business Type · Branches · Stage · Priority · C1 Name · C1 Role · C1 Phone · C1 Email · C1 Telegram · C1 WhatsApp · Current POS · Notes
       </div>
     </details>
   </div>
   <div class="mft">
     <button class="btn ghost" onclick="closeImportModal()">Cancel</button>
     <button class="btn primary" id="importBtn" onclick="confirmImport()" disabled>Import Leads</button>
+  </div>
+</div>
+</div>
+
+<!-- IMPORT COLUMN MAPPING MODAL -->
+<div class="overlay" id="importMapOv" onclick="">
+<div class="modal" style="max-width:540px">
+  <div class="mhd"><span class="mtitle">Map Columns</span><button class="mcls" onclick="closeImportMap()">&#x2715;</button></div>
+  <div class="mbody">
+    <p style="font-size:12px;color:var(--t2);line-height:1.7" id="importMapInfo">Map each CRM field to a column from your file.</p>
+    <div style="display:flex;flex-direction:column;gap:4px" id="importMapFields"></div>
+  </div>
+  <div class="mft">
+    <button class="btn ghost" onclick="closeImportMap()">← Back</button>
+    <button class="btn primary" onclick="confirmMappedImport()">Import</button>
   </div>
 </div>
 </div>
@@ -1226,6 +1363,7 @@ function mapLead(l, contacts, tickets, log) {
     log: log.map(i => ({
       id: i.id, type: i.type, text: i.text, date: i.created_at
     })),
+    onboarding: l.onboarding_data ? (() => { try { return JSON.parse(l.onboarding_data); } catch { return {}; } })() : {},
   };
 }
 
@@ -1251,6 +1389,7 @@ async function saveLeadToSupabase(data, editId) {
     outreach_vb: data.vb,
     outreach_cl: data.cl,
     outreach_ip: data.ip,
+    onboarding_data: data.onboarding ? JSON.stringify(data.onboarding) : null,
   };
   let leadId = editId;
   if (editId) {
@@ -1480,6 +1619,34 @@ const fmtD=d=>{if(!d)return'—';const x=new Date(d+' 00:00:00');return x.toLoca
 const fmtDT=(d,t)=>{let s=fmtD(d);if(t)s+=' '+t;return s};
 const esc=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 const scls=s=>({'New':'s-new','Contacted':'s-contacted','Interested':'s-interested','Meeting Set':'s-meeting','Negotiating':'s-negotiating','Closed':'s-closed','Lost':'s-lost','No Response':'s-noresponse','On Hold':'s-onhold'})[s]||'s-new';
+const STAGES=['New','Contacted','Interested','Meeting Set','Negotiating','Closed','Lost','No Response','On Hold'];
+
+/* ── INLINE STAGE CHANGE ── */
+function toggleStageDropdown(e, leadId) {
+  e.stopPropagation();
+  const dd = document.getElementById('sdrop-' + leadId);
+  if (!dd) return;
+  const isOpen = dd.style.display === 'block';
+  document.querySelectorAll('.stage-dropdown').forEach(d => { d.style.display = 'none'; });
+  if (!isOpen) dd.style.display = 'block';
+}
+function closeStageDropdown(leadId) {
+  const dd = document.getElementById('sdrop-' + leadId);
+  if (dd) dd.style.display = 'none';
+}
+async function quickChangeStage(leadId, stage) {
+  const l = leads.find(x => x.id === leadId);
+  if (!l || l.stage === stage) return;
+  const prev = l.stage;
+  l.stage = stage;
+  renderAll();
+  const { error } = await sb.from('leads').update({ stage }).eq('id', leadId);
+  if (error) { l.stage = prev; renderAll(); toast('⚠ Stage update failed'); return; }
+  const stageEmoji = {'New':'🆕','Contacted':'📞','Interested':'👀','Meeting Set':'📅','Negotiating':'🤝','Closed':'✅','Lost':'❌','No Response':'🔇','On Hold':'⏸'};
+  notify(stage === 'Closed' || stage === 'Lost' ? 'closed' : 'stage',
+    `${stageEmoji[stage]||'◎'} <b>Stage Updated</b>\n<b>${l.deal}</b>\n${prev} → <b>${stage}</b>`);
+  toast('Stage → ' + stage);
+}
 const tIcon={'meeting':'📅','training':'🎓','menu':'📋','onboarding':'🚀','support':'🛠','followup':'📞','demo':'💻','contract':'📝','other':'◎'};
 const tsClass={'pending':'ts-pending','scheduled':'ts-scheduled','inprogress':'ts-inprogress','completed':'ts-completed','cancelled':'ts-cancelled'};
 const tsLabel={'pending':'Pending','scheduled':'Scheduled','inprogress':'In Progress','completed':'Completed','cancelled':'Cancelled'};
@@ -1549,6 +1716,51 @@ function loadDelMode(m){
   setDelMode(delMode);
 }
 
+/* ── ONBOARDING ── */
+function toggleObSection(platform) {
+  const body = document.getElementById('ob-' + platform + '-body');
+  const chevron = document.getElementById('ob-' + platform + '-chevron');
+  if (!body) return;
+  const isOpen = body.style.display !== 'none';
+  body.style.display = isOpen ? 'none' : 'flex';
+  if (chevron) chevron.textContent = isOpen ? '▾' : '▴';
+}
+function getOnboardingData() {
+  return {
+    pulra: {
+      assigned: document.getElementById('ob_pulra_assigned')?.value.trim() || '',
+      status:   document.getElementById('ob_pulra_status')?.value || '',
+      notes:    document.getElementById('ob_pulra_notes')?.value.trim() || '',
+    },
+    flow: {
+      assigned: document.getElementById('ob_flow_assigned')?.value.trim() || '',
+      status:   document.getElementById('ob_flow_status')?.value || '',
+      notes:    document.getElementById('ob_flow_notes')?.value.trim() || '',
+    }
+  };
+}
+function loadOnboardingData(ob) {
+  const pulra = ob?.pulra || {};
+  const flow  = ob?.flow  || {};
+  if (document.getElementById('ob_pulra_assigned')) {
+    document.getElementById('ob_pulra_assigned').value = pulra.assigned || '';
+    document.getElementById('ob_pulra_status').value   = pulra.status   || '';
+    document.getElementById('ob_pulra_notes').value    = pulra.notes    || '';
+    document.getElementById('ob_flow_assigned').value  = flow.assigned  || '';
+    document.getElementById('ob_flow_status').value    = flow.status    || '';
+    document.getElementById('ob_flow_notes').value     = flow.notes     || '';
+    const pulraHasData = pulra.assigned || pulra.notes || pulra.status;
+    const flowHasData  = flow.assigned  || flow.notes  || flow.status;
+    ['pulra','flow'].forEach(p => {
+      const hasData = p === 'pulra' ? pulraHasData : flowHasData;
+      const body    = document.getElementById('ob-' + p + '-body');
+      const chevron = document.getElementById('ob-' + p + '-chevron');
+      if (body) body.style.display = hasData ? 'flex' : 'none';
+      if (chevron) chevron.textContent = hasData ? '▴' : '▾';
+    });
+  }
+}
+
 /* ── CONTACTS ── */
 function renderCtcList(){
   const w=document.getElementById('ctcList');
@@ -1588,12 +1800,14 @@ function openLeadModal(id=null){
     ch.forEach(f=>{const e=document.getElementById('f_'+f);if(e)e.checked=!!l[f]});
     ctcs=JSON.parse(JSON.stringify(l.contacts||[]));
     loadFuState(l);loadDelMode(l.delMode);loadLocState(l.loc);loadTypeState(l.type);
+    loadOnboardingData(l.onboarding||{});
   }else{
     sf.forEach(f=>{const e=document.getElementById('f_'+f);if(e)e.value=''});
     document.getElementById('f_stage').value='New';document.getElementById('f_pri').value='Normal';
     ch.forEach(f=>{const e=document.getElementById('f_'+f);if(e)e.checked=false});
     document.getElementById('f_lc').value=todayS();
     ctcs=[];selectedLocs=[];resetFuState();loadDelMode('none');loadLocState('');loadTypeState('');
+    loadOnboardingData({});
   }
   renderCtcList();
   document.getElementById('leadOv').classList.add('open');
@@ -1626,6 +1840,7 @@ function saveLead(){
     contacts:JSON.parse(JSON.stringify(ctcs)),
     tickets:editId?(leads.find(x=>x.id===editId)?.tickets||[]):[],
     log:editId?(leads.find(x=>x.id===editId)?.log||[]):[],
+    onboarding:getOnboardingData(),
     updatedAt:new Date().toISOString()
   };
   saveLeadToSupabase(d, editId).then(newId => {
@@ -2042,6 +2257,91 @@ function renderStats(){
     <div class="stat"><div class="sn b">${tk}</div><div class="sl">Tickets</div></div>`;
 }
 
+/* ── VIEW MODE ── */
+let currentView = 'leads';
+let tvFilters = { status: '', type: '', search: '' };
+
+function setView(view) {
+  currentView = view;
+  document.querySelectorAll('.view-tab').forEach(el => el.classList.toggle('active', el.dataset.view === view));
+  const leadsArea = document.getElementById('leadsArea');
+  const ticketsArea = document.getElementById('ticketsArea');
+  const leadsFilters = document.querySelectorAll('#qS,#qSt,#qFu,#qPr,#leadsSearchBox,#newLeadBtn');
+  if (view === 'leads') {
+    leadsArea.style.display = '';
+    ticketsArea.style.display = 'none';
+    leadsFilters.forEach(el => el && (el.style.display = ''));
+    renderAll();
+  } else {
+    leadsArea.style.display = 'none';
+    ticketsArea.style.display = '';
+    leadsFilters.forEach(el => el && (el.style.display = 'none'));
+    renderAllTickets();
+  }
+}
+
+function applyTvFilters() {
+  tvFilters.status = document.getElementById('tvStatus').value;
+  tvFilters.type   = document.getElementById('tvType').value;
+  tvFilters.search = document.getElementById('tvSearch').value.toLowerCase();
+  renderAllTickets();
+}
+
+function renderAllTickets() {
+  const allTix = [];
+  leads.forEach(l => {
+    (l.tickets || []).forEach(t => allTix.push({ ...t, _lead: l }));
+  });
+  let filtered = allTix;
+  if (tvFilters.status) filtered = filtered.filter(t => t.status === tvFilters.status);
+  if (tvFilters.type)   filtered = filtered.filter(t => t.type   === tvFilters.type);
+  if (tvFilters.search) filtered = filtered.filter(t =>
+    (t._lead.deal||'').toLowerCase().includes(tvFilters.search) ||
+    (t.title||'').toLowerCase().includes(tvFilters.search)
+  );
+  // Sort: upcoming dates first, no-date at end
+  filtered.sort((a, b) => {
+    if (!a.date && !b.date) return 0;
+    if (!a.date) return 1;
+    if (!b.date) return -1;
+    return a.date.localeCompare(b.date);
+  });
+  const container = document.getElementById('ticketsGrid');
+  if (!container) return;
+  if (!filtered.length) {
+    container.innerHTML = '<div class="drawer-empty" style="padding:60px 20px;text-align:center"><div class="drawer-empty-ico" style="font-size:28px;opacity:0.3;margin-bottom:8px">◎</div><span style="font-size:12px;color:var(--t3)">No tickets match the current filters</span></div>';
+    return;
+  }
+  container.innerHTML = filtered.map(t => {
+    const dd = t.date ? diffD(t.date) : null;
+    const dateClr = dd !== null && dd < 0 ? 'var(--danger)' : dd === 0 ? 'var(--warn)' : 'var(--t2)';
+    return `<div class="tv-ticket">
+      <span style="font-size:18px;flex-shrink:0;margin-top:1px">${tIcon[t.type]||'◎'}</span>
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:5px">
+          <span style="font-size:12.5px;font-weight:500;color:var(--t1)">${esc(t.title||(t.type.charAt(0).toUpperCase()+t.type.slice(1)))}</span>
+          <span class="ts-badge ${tsClass[t.status]||'ts-pending'}" style="cursor:pointer" onclick="cycleTicketStatusGlobal('${t._lead.id}','${t.id}')">${tsLabel[t.status]||'Pending'}</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:10.5px">
+          <span style="color:var(--accent);cursor:pointer;font-weight:500" onclick="openDrawer('${t._lead.id}','tickets')">${esc(t._lead.deal)}</span>
+          ${t.date?`<span style="color:${dateClr}">${fmtDT(t.date,t.time)}</span>`:''}
+          ${t.assigned?`<span style="color:var(--t3)">→ ${esc(t.assigned)}</span>`:''}
+          ${t.notes?`<span style="color:var(--t3);font-style:italic;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(t.notes)}</span>`:''}
+        </div>
+      </div>
+      <div style="display:flex;gap:4px;flex-shrink:0">
+        ${t.date?`<button class="ib" onclick="addToGcal('${t._lead.id}','${t.id}')" title="Add to Calendar"><span class="ib-tip">Calendar</span>📅</button>`:''}
+        <button class="ib ed" onclick="openTicketModal('${t._lead.id}','${t.id}')" title="Edit"><span class="ib-tip">Edit</span>✎</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function cycleTicketStatusGlobal(leadId, tickId) {
+  cycleTicketStatus(leadId, tickId);
+  if (currentView === 'tickets') renderAllTickets();
+}
+
 /* ── RENDER ── */
 function renderAll(){
   const q=document.getElementById('qS').value.toLowerCase(),qs=document.getElementById('qSt').value,
@@ -2085,21 +2385,17 @@ function renderAll(){
       }).join('');
       ctcH=`<div class="irow"><span class="ilbl">Contact${contacts.length>1?'s':''}</span><div class="ival clist">${rows}</div></div>`;
     }
-    const pds=[{k:'em',l:'Email'},{k:'wa',l:'WhatsApp'},{k:'vb',l:'Viber'},{k:'cl',l:'Called'},{k:'ip',l:'In Person'}];
-    const pills=pds.map(p=>`<span class="pill ${l[p.k]?'done':''}">${l[p.k]?'✓ ':''}${p.l}</span>`).join('');
-    const priTag=l.priority==='High'?'<span style="color:var(--accent);font-size:9px;margin-left:5px">● HIGH</span>':l.priority==='Low'?'<span style="color:var(--t3);font-size:9px;margin-left:5px">● LOW</span>':'';
+    const priTag=l.priority==='High'?'<span style="color:var(--accent);font-size:9px">● HIGH</span>':l.priority==='Low'?'<span style="color:var(--t3);font-size:9px">● LOW</span>':'';
     const delBadgeMap={ewity:'<span class="del-badge del-ewity">⭐ Starter</span>',self:'<span class="del-badge del-self">🚀 Growth</span>'};
     const delBadge=l.delMode&&l.delMode!=='none'?delBadgeMap[l.delMode]||'':'';
 
-    // tickets
-    const tks=(l.tickets||[]);
-
+    const stageOpts = STAGES.map(s=>`<div class="sd-opt${s===l.stage?' sd-active':''}" onclick="quickChangeStage('${l.id}','${s}');closeStageDropdown('${l.id}')"><span class="sbadge ${scls(s)}">${s}</span></div>`).join('');
     return`<div class="deal-group">
       <div class="card ${cc}" data-id="${l.id}">
         <div class="ctop">
           <div class="ctop-l">
-            <div class="cdeal">${esc(l.deal||'Unnamed')}${priTag}</div>
-            <div class="csub">${esc(sub||'—')}</div>
+            <div class="cdeal">${esc(l.deal||'Unnamed')}</div>
+            ${sub?`<div class="csub">${esc(sub)}</div>`:''}
             ${locDisplay?`<div style="display:flex;flex-wrap:wrap;gap:3px;margin-top:4px">${locDisplay}</div>`:''}
           </div>
           <div class="cacts">
@@ -2111,18 +2407,22 @@ function renderAll(){
           </div>
         </div>
         <div class="cbody">
-          <div class="irow"><span class="ilbl">Stage</span><span class="ival"><span class="sbadge ${scls(l.stage)}">${esc(l.stage)}</span></span></div>
+          <div class="cstage-row">
+            <div style="position:relative;display:inline-block">
+              <button class="stage-btn" onclick="toggleStageDropdown(event,'${l.id}')" title="Click to change stage">
+                <span class="sbadge ${scls(l.stage)}">${esc(l.stage)}</span><span class="stage-chevron">▾</span>
+              </button>
+              <div class="stage-dropdown" id="sdrop-${l.id}">${stageOpts}</div>
+            </div>
+            ${delBadge}${priTag}
+          </div>
           ${ctcH}
-          ${l.soft?`<div class="irow"><span class="ilbl">Platform</span><span class="ival">${esc(l.soft)}</span></div>`:''}
-          ${l.del?`<div class="irow"><span class="ilbl">Tools</span><span class="ival">${esc(l.del)}</span></div>`:''}
-          ${delBadge?`<div class="irow"><span class="ilbl">Plan</span><div class="ival">${delBadge}</div></div>`:''}
-          <div class="irow"><span class="ilbl">Outreach</span><div class="ival"><div class="pills">${pills}</div></div></div>
           ${fuH}
           ${l.notes?`<div class="nsnip">${esc(l.notes)}</div>`:''}
         </div>
       </div>
       <div class="card-footer">
-        <button class="card-tab tab-tickets ${(l.tickets||[]).length?'':''}  " onclick="openDrawer('${l.id}','tickets')">
+        <button class="card-tab tab-tickets" onclick="openDrawer('${l.id}','tickets')">
           🎫 Tickets${(l.tickets||[]).length?` <span class="tab-count">${(l.tickets||[]).length}</span>`:''}
         </button>
         <button class="card-tab tab-log" onclick="openDrawer('${l.id}','log')">
@@ -2161,8 +2461,11 @@ function exportCSV(){
 }
 
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')save()});
+document.addEventListener('click', () => {
+  document.querySelectorAll('.stage-dropdown').forEach(d => { d.style.display = 'none'; });
+});
 document.addEventListener('keydown',e=>{
-  if(e.key==='Escape'){const discOv=document.getElementById('discardOv');if(discOv.classList.contains('open')){cancelDiscard();return}if(document.getElementById('notifPanel').classList.contains('open')){closeNotifPanel();return}if(fuPanelOpen){closeFuPanel();return}if(document.getElementById('leadOv').classList.contains('open')){tryCloseLeadModal();return}if(document.getElementById('tickOv').classList.contains('open')){tryCloseTicketModal();return}if(document.getElementById('drawer').classList.contains('open')){closeDrawer();return}closeTg();closeWa();closeEm()}
+  if(e.key==='Escape'){document.querySelectorAll('.stage-dropdown').forEach(d=>{d.style.display='none'});const discOv=document.getElementById('discardOv');if(discOv.classList.contains('open')){cancelDiscard();return}if(document.getElementById('notifPanel').classList.contains('open')){closeNotifPanel();return}if(fuPanelOpen){closeFuPanel();return}if(document.getElementById('leadOv').classList.contains('open')){tryCloseLeadModal();return}if(document.getElementById('tickOv').classList.contains('open')){tryCloseTicketModal();return}if(document.getElementById('drawer').classList.contains('open')){closeDrawer();return}closeTg();closeWa();closeEm()}
   if((e.metaKey||e.ctrlKey)&&e.key==='n'){e.preventDefault();openLeadModal()}
 });
 
@@ -2209,6 +2512,8 @@ function snapLeadForm() {
     ip: document.getElementById('f_ip').checked,
     ctcs: JSON.stringify(ctcs),
     locs: JSON.stringify(selectedLocs),
+    obPulra: (document.getElementById('ob_pulra_assigned')?.value||'')+(document.getElementById('ob_pulra_status')?.value||'')+(document.getElementById('ob_pulra_notes')?.value||''),
+    obFlow:  (document.getElementById('ob_flow_assigned')?.value||'')+(document.getElementById('ob_flow_status')?.value||'')+(document.getElementById('ob_flow_notes')?.value||''),
   });
 }
 
@@ -2476,9 +2781,8 @@ function deleteDrawerLog(entryId) {
 
 /* ── DAILY FOLLOW-UP NOTIFICATION ── */
 function scheduleDailyCheck() {
-  // Fire once now in case it's already past midnight check time
-  runFollowUpCheck();
-  // Then every hour check if we should send (only fires once per day)
+  // Check once per hour; guard key (flow_fu_notif_YYYY-MM-DD) prevents duplicate sends.
+  // Not fired on load — avoids spamming the team chat when everyone opens the app.
   setInterval(runFollowUpCheck, 3600000);
 }
 
@@ -2499,36 +2803,131 @@ function runFollowUpCheck() {
   }
 }
 
-/* ── CSV IMPORT ── */
-let _importRows = [];
+/* ── IMPORT (CSV + XLSX) ── */
+let _importRows   = [];
+let _importHeaders = [];
+let _importRawRows = [];
 
 function openImportModal() {
   document.getElementById('importOv').classList.add('open');
   document.getElementById('importStatus').textContent = '';
   document.getElementById('importStatus').className = 'import-status';
   document.getElementById('importBtn').disabled = true;
-  _importRows = [];
+  _importRows = []; _importHeaders = []; _importRawRows = [];
 }
 
 function closeImportModal() {
   document.getElementById('importOv').classList.remove('open');
-  _importRows = [];
-  document.getElementById('csvFileInput2').value = '';
+  _importRows = []; _importHeaders = []; _importRawRows = [];
+  const inp = document.getElementById('csvFileInput2'); if (inp) inp.value = '';
+}
+
+function closeImportMap() {
+  document.getElementById('importMapOv').classList.remove('open');
+  document.getElementById('importOv').classList.add('open');
 }
 
 function handleCSVDrop(e) {
   e.preventDefault();
   const file = e.dataTransfer?.files?.[0];
-  if (file && file.name.endsWith('.csv')) processCSVFile(file);
-  else setImportStatus('Please drop a .csv file.', 'err');
+  if (!file) return;
+  if (file.name.match(/\.xlsx?$/i)) processXLSXFile(file);
+  else if (file.name.endsWith('.csv')) processCSVFile(file);
+  else setImportStatus('Please drop a .csv or .xlsx file.', 'err');
 }
 
 function handleCSVFile(input) {
   const file = input.files?.[0];
   if (!file) return;
-  processCSVFile(file);
-  // Make sure import modal is open
   if (!document.getElementById('importOv').classList.contains('open')) openImportModal();
+  if (file.name.match(/\.xlsx?$/i)) processXLSXFile(file);
+  else processCSVFile(file);
+}
+
+/* ── XLSX PROCESSING ── */
+function processXLSXFile(file) {
+  if (typeof XLSX === 'undefined') { setImportStatus('Excel library not loaded. Check your connection.', 'err'); return; }
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const wb   = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
+      const ws   = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: false, defval: '' });
+      if (!rows.length || rows.length < 2) { setImportStatus('File is empty or has no data rows.', 'err'); return; }
+      _importHeaders = rows[0].map(h => String(h || '').trim());
+      _importRawRows = rows.slice(1).filter(r => r.some(c => String(c||'').trim()));
+      openImportMap(file.name, _importRawRows.length);
+    } catch(err) { setImportStatus('Could not read file: ' + err.message, 'err'); }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function openImportMap(filename, rowCount) {
+  document.getElementById('importMapInfo').innerHTML =
+    `<strong>${esc(filename)}</strong> &mdash; ${rowCount} row${rowCount!==1?'s':''} detected.<br>Map each CRM field to a column from your file. Fields marked <span style="color:var(--danger)">*</span> are required.`;
+
+  const FIELDS = [
+    { key:'deal',    label:'Business Name', req:true },
+    { key:'loc',     label:'Location / Island' },
+    { key:'type',    label:'Business Type' },
+    { key:'branches',label:'No. of Listings' },
+    { key:'stage',   label:'Stage' },
+    { key:'priority',label:'Priority' },
+    { key:'soft',    label:'Current Platform' },
+    { key:'notes',   label:'Notes' },
+    { key:'c1name',  label:'Contact Name' },
+    { key:'c1role',  label:'Contact Role' },
+    { key:'c1phone', label:'Contact Phone' },
+    { key:'c1email', label:'Contact Email' },
+  ];
+  const HINTS = {
+    deal:['business','name','deal','company'],loc:['location','island','loc','area'],
+    type:['type','kind','category'],branches:['branch','outlet','listing'],
+    stage:['stage','status'],priority:['priority','pri'],soft:['pos','platform','soft','software'],
+    notes:['note','remark','comment'],c1name:['contact','person'],c1phone:['phone','mobile','tel'],
+    c1email:['email','mail'],c1role:['role','title','position'],
+  };
+  const auto = {};
+  FIELDS.forEach(f => {
+    const kws = HINTS[f.key] || [f.key];
+    auto[f.key] = _importHeaders.findIndex(h => {
+      const hn = h.toLowerCase().replace(/[^a-z0-9]/g,'');
+      return kws.some(k => hn.includes(k));
+    });
+  });
+  const opts = ['<option value="-1">(skip)</option>',
+    ..._importHeaders.map((h,i) => `<option value="${i}">${esc(h)}</option>`)
+  ].join('');
+  document.getElementById('importMapFields').innerHTML = FIELDS.map(f => `
+    <div class="map-row">
+      <span class="map-lbl">${f.label}${f.req?'<span class="map-req"> *</span>':''}</span>
+      <select class="sel" id="map_${f.key}" style="flex:1">${opts.replace(
+        `value="${auto[f.key]}"`, `value="${auto[f.key]}" selected`)}</select>
+    </div>`).join('');
+
+  document.getElementById('importOv').classList.remove('open');
+  document.getElementById('importMapOv').classList.add('open');
+}
+
+function confirmMappedImport() {
+  const gc = key => parseInt(document.getElementById('map_'+key)?.value ?? '-1');
+  if (gc('deal') === -1) { toast('⚠ Map the Business Name field first'); return; }
+  const validStages = ['New','Contacted','Interested','Meeting Set','Negotiating','Closed','Lost','No Response','On Hold'];
+  const validPri    = ['High','Normal','Low'];
+  _importRows = [];
+  _importRawRows.forEach(cols => {
+    const deal = (cols[gc('deal')]||'').toString().trim();
+    if (!deal) return;
+    const cv = k => gc(k) >= 0 ? (cols[gc(k)]||'').toString().trim() : '';
+    const stage    = validStages.find(s => s.toLowerCase() === cv('stage').toLowerCase()) || 'New';
+    const priority = validPri.find(p => p.toLowerCase() === cv('priority').toLowerCase()) || 'Normal';
+    const row = { deal, loc:cv('loc'), type:cv('type'), branches:cv('branches'), stage, priority, soft:cv('soft'), notes:cv('notes'), contacts:[] };
+    if (cv('c1name')) row.contacts.push({ name:cv('c1name'), role:cv('c1role'), phone:cv('c1phone'), email:cv('c1email'), tg:'', wa:'' });
+    _importRows.push(row);
+  });
+  document.getElementById('importMapOv').classList.remove('open');
+  if (!_importRows.length) { toast('⚠ No valid rows to import'); return; }
+  confirmImport();
 }
 
 function processCSVFile(file) {
@@ -2673,46 +3072,31 @@ function initTheme() {
 }
 function toggleTheme() {
   const current = document.documentElement.getAttribute('data-theme') || 'light';
-  const next = current === 'dark' ? 'light' : 'dark';
+  const next    = current === 'dark' ? 'light' : 'dark';
   const bgColor = next === 'dark' ? '#0f0e17' : '#f5f4f0';
-  const canvas = document.getElementById('themeWaveCanvas');
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
-  canvas.style.display = 'block';
-  const ctx = canvas.getContext('2d');
-  const W = canvas.width, H = canvas.height;
-  const duration = 680;
-  const start = performance.now();
-  let switched = false;
-  function frame(now) {
-    const t = Math.min((now - start) / duration, 1);
-    const ease = t < 0.5 ? 2*t*t : -1+(4-2*t)*t;
-    ctx.clearRect(0, 0, W, H);
-    ctx.fillStyle = bgColor;
-    const frontX = ease * (W + 160) - 80;
-    const amp = 52;
-    const freq = (2 * Math.PI) / (H * 0.42);
-    const phase = ease * Math.PI * 3.5;
-    ctx.beginPath();
-    ctx.moveTo(0, 0);
-    ctx.lineTo(frontX + Math.sin(phase) * amp, 0);
-    for (let y = 3; y <= H; y += 3) {
-      ctx.lineTo(frontX + Math.sin(y * freq + phase) * amp, y);
-    }
-    ctx.lineTo(0, H);
-    ctx.closePath();
-    ctx.fill();
-    if (!switched && ease >= 0.5) {
-      switched = true;
-      document.documentElement.setAttribute('data-theme', next);
-      localStorage.setItem(THEME_KEY, next);
-      const btn = document.getElementById('themeToggleBtn');
-      if (btn) btn.textContent = next === 'dark' ? '☀' : '☾';
-    }
-    if (t < 1) { requestAnimationFrame(frame); }
-    else { canvas.style.display = 'none'; }
-  }
-  requestAnimationFrame(frame);
+  const overlay = document.getElementById('themeCircleOverlay');
+  overlay.style.background   = bgColor;
+  overlay.style.clipPath     = 'circle(0% at 50% 50%)';
+  overlay.style.transition   = 'none';
+  overlay.style.display      = 'block';
+  // Two-frame delay so the initial clip-path is painted before transition starts
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    overlay.style.transition = 'clip-path 0.55s cubic-bezier(0.4,0,0.2,1)';
+    overlay.style.clipPath   = 'circle(150% at 50% 50%)';
+  }));
+  // Switch theme at midpoint
+  setTimeout(() => {
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem(THEME_KEY, next);
+    const btn = document.getElementById('themeToggleBtn');
+    if (btn) btn.textContent = next === 'dark' ? '☀' : '☾';
+  }, 280);
+  // Hide overlay once done
+  setTimeout(() => {
+    overlay.style.transition = 'none';
+    overlay.style.display    = 'none';
+    overlay.style.clipPath   = 'circle(0% at 50% 50%)';
+  }, 580);
 }
 
 initTheme();
@@ -2856,6 +3240,6 @@ function updateTicketDateDisplay() {
   </div>
 </div>
 
-<canvas id="themeWaveCanvas" style="position:fixed;inset:0;z-index:9999;pointer-events:none;display:none"></canvas>
+<div id="themeCircleOverlay"></div>
 </body>
 </html>
