@@ -739,6 +739,14 @@ select option{background:var(--s2)}
       <div class="fg"><label class="flbl">Business Type</label>
         <select id="f_type_sel" onchange="onTypeChange()">
           <option value="">— Select type —</option>
+          <optgroup label="Retail &amp; Food">
+            <option value="Retail Shop">Retail Shop</option>
+            <option value="Supermarket / Grocery">Supermarket / Grocery</option>
+            <option value="Restaurant">Restaurant</option>
+            <option value="Café / Coffee Shop">Café / Coffee Shop</option>
+            <option value="Bakery">Bakery</option>
+            <option value="Food Stall / Takeaway">Food Stall / Takeaway</option>
+          </optgroup>
           <optgroup label="Professional Services">
             <option value="Consulting">Consulting</option>
             <option value="IT Services">IT Services</option>
@@ -799,23 +807,11 @@ select option{background:var(--s2)}
       </div>
     </div>
 
-    <div class="fsec"><span>Follow-up</span></div>
-    <div class="cbg" style="margin-bottom:8px"><input type="checkbox" id="f_fuR"><label for="f_fuR">Follow-up required</label></div>
-    <div class="fu-opts" id="fuOpts">
-      <div class="fu-opt" onclick="setFuPreset(1,'Tomorrow')">Tomorrow</div>
-      <div class="fu-opt" onclick="setFuPreset(3,'In 3 days')">In 3 days</div>
-      <div class="fu-opt" onclick="setFuPreset(7,'In 1 week')">In 1 week</div>
-      <div class="fu-opt" onclick="setFuPreset(14,'In 2 weeks')">In 2 weeks</div>
-      <div class="fu-opt" onclick="setFuPreset(30,'In 1 month')">In 1 month</div>
-      <div class="fu-opt" onclick="setFuPreset(60,'In 2 months')">In 2 months</div>
-      <div class="fu-opt" onclick="setFuPreset(90,'In 3 months')">In 3 months</div>
-      <div class="fu-opt" id="fuCustomOpt" onclick="toggleFuCustom()">Custom date</div>
+    <div class="fsec">
+      <span>Contacts</span>
+      <button class="btn ghost" style="padding:3px 9px;font-size:10px;border-radius:5px" onclick="addCtc()">＋ Add</button>
     </div>
-    <div class="fu-custom-row" id="fuCustomRow" style="display:none">
-      <label class="flbl">Pick a date</label>
-      <input type="date" id="f_fuD" onchange="onFuDateChange()">
-    </div>
-    <div style="font-size:11px;color:var(--t3);margin-top:4px" id="fuDateDisplay"></div>
+    <div class="ctc-wrap" id="ctcList"></div>
 
     <div class="fsec"><span>Existing Solution</span></div>
     <div class="frow">
@@ -823,13 +819,6 @@ select option{background:var(--s2)}
       <div class="fg"><label class="flbl">Other Tools / Integrations</label><input type="text" id="f_del" placeholder="e.g. Stripe, Google Calendar"></div>
     </div>
 
-    <div class="fsec"><span>Plan Interest</span></div>
-    <label class="flbl" style="margin-bottom:6px;display:block">Which plan is this customer interested in?</label>
-    <div class="del-toggle" id="delToggle">
-      <div class="del-opt active-none" onclick="setDelMode('none')" id="dm_none">Not decided</div>
-      <div class="del-opt" onclick="setDelMode('ewity')" id="dm_ewity">⭐ Starter</div>
-      <div class="del-opt" onclick="setDelMode('self')" id="dm_self">🚀 Growth</div>
-    </div>
     <input type="hidden" id="f_delMode" value="none">
 
     <div class="fsec"><span>Onboarding</span></div>
@@ -848,6 +837,15 @@ select option{background:var(--s2)}
                 <option value="in_progress">In Progress</option>
                 <option value="completed">Completed</option>
                 <option value="on_hold">On Hold</option>
+              </select>
+            </div>
+          </div>
+          <div class="frow">
+            <div class="fg"><label class="flbl">Delivery Managed By</label>
+              <select id="ob_pulra_delivery">
+                <option value="">Not set</option>
+                <option value="us">Managed by us (Pulra)</option>
+                <option value="them">Managed by them</option>
               </select>
             </div>
           </div>
@@ -876,13 +874,7 @@ select option{background:var(--s2)}
       </div>
     </div>
 
-    <div class="fsec">
-      <span>Contacts</span>
-      <button class="btn ghost" style="padding:3px 9px;font-size:10px;border-radius:5px" onclick="addCtc()">＋ Add</button>
-    </div>
-    <div class="ctc-wrap" id="ctcList"></div>
-
-    <div class="fsec"><span>Outreach</span></div>
+    <div class="fsec"><span>Outreach &amp; Follow-up</span></div>
     <div class="cks">
       <div class="cbg"><input type="checkbox" id="f_em"><label for="f_em">Email sent</label></div>
       <div class="cbg"><input type="checkbox" id="f_wa"><label for="f_wa">WhatsApp</label></div>
@@ -890,16 +882,44 @@ select option{background:var(--s2)}
       <div class="cbg"><input type="checkbox" id="f_cl"><label for="f_cl">Called</label></div>
       <div class="cbg"><input type="checkbox" id="f_ip"><label for="f_ip">Met in person</label></div>
     </div>
-    <div class="frow">
+    <div class="frow" style="margin-top:8px">
       <div class="fg"><label class="flbl">Last Contacted</label><input type="date" id="f_lc"></div>
     </div>
+    <div class="cbg" style="margin:10px 0 8px"><input type="checkbox" id="f_fuR"><label for="f_fuR">Follow-up required</label></div>
+    <div class="fu-opts" id="fuOpts">
+      <div class="fu-opt" onclick="setFuPreset(1,'Tomorrow')">Tomorrow</div>
+      <div class="fu-opt" onclick="setFuPreset(3,'In 3 days')">In 3 days</div>
+      <div class="fu-opt" onclick="setFuPreset(7,'In 1 week')">In 1 week</div>
+      <div class="fu-opt" onclick="setFuPreset(14,'In 2 weeks')">In 2 weeks</div>
+      <div class="fu-opt" onclick="setFuPreset(30,'In 1 month')">In 1 month</div>
+      <div class="fu-opt" onclick="setFuPreset(60,'In 2 months')">In 2 months</div>
+      <div class="fu-opt" onclick="setFuPreset(90,'In 3 months')">In 3 months</div>
+      <div class="fu-opt" id="fuCustomOpt" onclick="toggleFuCustom()">Custom date</div>
+    </div>
+    <div class="fu-custom-row" id="fuCustomRow" style="display:none">
+      <label class="flbl">Pick a date</label>
+      <input type="date" id="f_fuD" onchange="onFuDateChange()">
+    </div>
+    <div style="font-size:11px;color:var(--t3);margin-top:4px" id="fuDateDisplay"></div>
 
-    <div class="fsec"><span>Notes</span></div>
-    <div class="fg"><textarea id="f_notes" placeholder="Key details, objections, context…"></textarea></div>
+    <div id="initLogSection" style="display:none">
+      <div class="fsec" style="margin-top:8px"><span>Initial Log Entry</span><span style="font-size:10px;color:var(--t3);font-weight:400;margin-left:6px">optional</span></div>
+      <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px" id="initLogTypeRow">
+        <div class="log-type-opt" data-type="note" onclick="setInitLogType('note')">📝 Note</div>
+        <div class="log-type-opt" data-type="call" onclick="setInitLogType('call')">📞 Call</div>
+        <div class="log-type-opt" data-type="meeting" onclick="setInitLogType('meeting')">🤝 Meeting</div>
+        <div class="log-type-opt" data-type="email" onclick="setInitLogType('email')">✉ Email</div>
+        <div class="log-type-opt" data-type="whatsapp" onclick="setInitLogType('whatsapp')">💬 WhatsApp</div>
+        <div class="log-type-opt" data-type="visit" onclick="setInitLogType('visit')">📍 Visit</div>
+      </div>
+      <textarea id="f_initLog" placeholder="Add an initial note, call summary, or first contact detail…" style="min-height:64px"></textarea>
+    </div>
+
+    <input type="hidden" id="f_notes" value="">
   </div>
   <div class="mft">
     <button class="btn ghost" onclick="tryCloseLeadModal()">Cancel</button>
-    <button class="btn primary" onclick="saveLead()">Save Lead</button>
+    <button class="btn primary" id="saveLeadBtn" onclick="saveLead()">Save Lead</button>
   </div>
 </div>
 </div>
@@ -1738,10 +1758,10 @@ function resetFuState(){
 /* ── DELIVERY MODE ── */
 function setDelMode(m){
   delMode=m;
-  document.getElementById('f_delMode').value=m;
+  const inp=document.getElementById('f_delMode');if(inp)inp.value=m;
   ['none','ewity','self'].forEach(k=>{
     const el=document.getElementById('dm_'+k);
-    el.className='del-opt'+(m===k?' active-'+k:'');
+    if(el)el.className='del-opt'+(m===k?' active-'+k:'');
   });
 }
 function loadDelMode(m){
@@ -1763,6 +1783,7 @@ function getOnboardingData() {
     pulra: {
       assigned: document.getElementById('ob_pulra_assigned')?.value.trim() || '',
       status:   document.getElementById('ob_pulra_status')?.value || '',
+      delivery: document.getElementById('ob_pulra_delivery')?.value || '',
       notes:    document.getElementById('ob_pulra_notes')?.value.trim() || '',
     },
     flow: {
@@ -1776,13 +1797,14 @@ function loadOnboardingData(ob) {
   const pulra = ob?.pulra || {};
   const flow  = ob?.flow  || {};
   if (document.getElementById('ob_pulra_assigned')) {
-    document.getElementById('ob_pulra_assigned').value = pulra.assigned || '';
-    document.getElementById('ob_pulra_status').value   = pulra.status   || '';
-    document.getElementById('ob_pulra_notes').value    = pulra.notes    || '';
-    document.getElementById('ob_flow_assigned').value  = flow.assigned  || '';
-    document.getElementById('ob_flow_status').value    = flow.status    || '';
-    document.getElementById('ob_flow_notes').value     = flow.notes     || '';
-    const pulraHasData = pulra.assigned || pulra.notes || pulra.status;
+    document.getElementById('ob_pulra_assigned').value  = pulra.assigned  || '';
+    document.getElementById('ob_pulra_status').value    = pulra.status    || '';
+    document.getElementById('ob_pulra_delivery').value  = pulra.delivery  || '';
+    document.getElementById('ob_pulra_notes').value     = pulra.notes     || '';
+    document.getElementById('ob_flow_assigned').value   = flow.assigned   || '';
+    document.getElementById('ob_flow_status').value     = flow.status     || '';
+    document.getElementById('ob_flow_notes').value      = flow.notes      || '';
+    const pulraHasData = pulra.assigned || pulra.notes || pulra.status || pulra.delivery;
     const flowHasData  = flow.assigned  || flow.notes  || flow.status;
     ['pulra','flow'].forEach(p => {
       const hasData = p === 'pulra' ? pulraHasData : flowHasData;
@@ -1834,6 +1856,8 @@ function openLeadModal(id=null){
     ctcs=JSON.parse(JSON.stringify(l.contacts||[]));
     loadFuState(l);loadDelMode(l.delMode);loadLocState(l.loc);loadTypeState(l.type);
     loadOnboardingData(l.onboarding||{});
+    const initSec=document.getElementById('initLogSection');
+    if(initSec)initSec.style.display='none';
   }else{
     sf.forEach(f=>{const e=document.getElementById('f_'+f);if(e)e.value=''});
     document.getElementById('f_stage').value='New';document.getElementById('f_pri').value='Normal';
@@ -1841,6 +1865,10 @@ function openLeadModal(id=null){
     document.getElementById('f_lc').value=todayS();
     ctcs=[];selectedLocs=[];resetFuState();loadDelMode('none');loadLocState('');loadTypeState('');
     loadOnboardingData({});
+    const initSec=document.getElementById('initLogSection');
+    if(initSec)initSec.style.display='';
+    const initLog=document.getElementById('f_initLog');if(initLog)initLog.value='';
+    document.querySelectorAll('#initLogTypeRow .log-type-opt').forEach(e=>e.classList.remove('sel'));
   }
   renderCtcList();
   document.getElementById('leadOv').classList.add('open');
@@ -1862,8 +1890,8 @@ function saveLead(){
     fuD:fuDate,fuR:document.getElementById('f_fuR').checked,
     soft:document.getElementById('f_soft').value.trim(),
     del:document.getElementById('f_del').value.trim(),
-    delMode:document.getElementById('f_delMode').value,
-    notes:document.getElementById('f_notes').value.trim(),
+    delMode:document.getElementById('f_delMode').value||'none',
+    notes:editId?(leads.find(x=>x.id===editId)?.notes||''):'',
     lc:document.getElementById('f_lc').value,
     em:document.getElementById('f_em').checked,
     wa:document.getElementById('f_wa').checked,
@@ -1876,8 +1904,13 @@ function saveLead(){
     onboarding:getOnboardingData(),
     updatedAt:new Date().toISOString()
   };
-  saveLeadToSupabase(d, editId).then(newId => {
+  saveLeadToSupabase(d, editId).then(async newId => {
     if (!newId) return;
+    if (!editId) {
+      const logText = document.getElementById('f_initLog')?.value.trim();
+      const logType = document.querySelector('#initLogTypeRow .log-type-opt.sel')?.dataset.type || 'note';
+      if (logText) await saveInteractionToSupabase(newId, logType, logText);
+    }
     closeLeadModal();
     toast(editId ? '✓ Lead updated' : '✓ Lead added');
     const cfg = loadConfig();
@@ -2536,7 +2569,6 @@ function snapLeadForm() {
     branches: document.getElementById('f_branches').value,
     soft: document.getElementById('f_soft').value,
     del: document.getElementById('f_del').value,
-    notes: document.getElementById('f_notes').value,
     lc: document.getElementById('f_lc').value,
     fuD: document.getElementById('f_fuD').value,
     fuR: document.getElementById('f_fuR').checked,
@@ -2550,7 +2582,7 @@ function snapLeadForm() {
     ip: document.getElementById('f_ip').checked,
     ctcs: JSON.stringify(ctcs),
     locs: JSON.stringify(selectedLocs),
-    obPulra: (document.getElementById('ob_pulra_assigned')?.value||'')+(document.getElementById('ob_pulra_status')?.value||'')+(document.getElementById('ob_pulra_notes')?.value||''),
+    obPulra: (document.getElementById('ob_pulra_assigned')?.value||'')+(document.getElementById('ob_pulra_status')?.value||'')+(document.getElementById('ob_pulra_delivery')?.value||'')+(document.getElementById('ob_pulra_notes')?.value||''),
     obFlow:  (document.getElementById('ob_flow_assigned')?.value||'')+(document.getElementById('ob_flow_status')?.value||'')+(document.getElementById('ob_flow_notes')?.value||''),
   });
 }
@@ -3159,6 +3191,10 @@ async function confirmImport() {
   if (skipped) msg += `, ${skipped} skipped`;
   if (failed)  msg += ` (${failed} failed)`;
   toast(msg);
+}
+
+function setInitLogType(type) {
+  document.querySelectorAll('#initLogTypeRow .log-type-opt').forEach(e => e.classList.toggle('sel', e.dataset.type === type));
 }
 
 /* ── BULK SELECT ── */
