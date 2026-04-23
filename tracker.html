@@ -178,7 +178,7 @@ header{position:sticky;top:0;z-index:100;background:var(--header-bg);backdrop-fi
 .deal-group{display:flex;flex-direction:column;gap:0;position:relative}
 
 /* LEAD CARD */
-.card{background:var(--s1);border:1px solid var(--b1);border-radius:var(--rl);transition:border-color 0.2s,box-shadow 0.2s}
+.card{position:relative;background:var(--s1);border:1px solid var(--b1);border-radius:var(--rl);transition:border-color 0.2s,box-shadow 0.2s}
 .card:hover{border-color:var(--b2);box-shadow:0 4px 16px rgba(0,0,0,0.08)}
 .card.overdue{border-color:rgba(220,79,79,0.35)}.card.due-today{border-color:rgba(184,119,22,0.35)}.card.hipri{border-left:3px solid var(--accent)}.card.no-response{opacity:0.75;border-style:dashed}
 .ctop{padding:13px 15px 11px;display:flex;align-items:flex-start;justify-content:space-between;border-bottom:1px solid var(--b1);gap:10px}
@@ -493,6 +493,21 @@ select option{background:var(--s2)}
 .map-lbl{font-size:11px;color:var(--t2);width:150px;flex-shrink:0}
 .map-req{color:var(--danger)}
 
+/* ── IMPORT MODE PILLS ── */
+.imp-mode-pill{flex:1;padding:5px 8px;font-size:11px;font-weight:500;border:1px solid var(--b2);border-radius:6px;background:var(--s2);color:var(--t2);cursor:pointer;text-align:center;transition:background 0.14s,color 0.14s,border-color 0.14s}
+.imp-mode-pill.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+/* ── BULK SELECT ── */
+.card-cb{position:absolute;top:11px;left:11px;width:16px;height:16px;accent-color:var(--accent);cursor:pointer;z-index:5;display:none;border-radius:3px}
+.bulk-mode .card{cursor:default}
+.bulk-mode .card-cb{display:block}
+.card.selected{outline:2px solid var(--accent);background:var(--accent-dim)}
+#bulkBar{position:fixed;bottom:0;left:0;right:0;background:var(--s1);border-top:1px solid var(--b2);padding:10px 20px;display:flex;align-items:center;gap:8px;z-index:250;transform:translateY(100%);transition:transform 0.22s cubic-bezier(0.4,0,0.2,1);box-shadow:0 -4px 24px rgba(0,0,0,0.10);flex-wrap:wrap}
+#bulkBar.open{transform:translateY(0)}
+.bulk-count{font-size:13px;font-weight:600;color:var(--t1);min-width:80px;white-space:nowrap}
+.bulk-sep{width:1px;height:22px;background:var(--b2);flex-shrink:0}
+#bulkSelectBtn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+
 @media (max-width: 660px){
   /* Hide verbose labels in header */
   .ml-hide{display:none}
@@ -634,6 +649,7 @@ select option{background:var(--s2)}
   </div>
   <div class="tsep"></div>
   <button class="btn primary" id="newLeadBtn" onclick="openLeadModal()">＋ New Lead</button>
+  <button class="btn ghost" id="bulkSelectBtn" onclick="toggleBulkMode()" title="Select leads to bulk-update">☑ Select</button>
   <div class="tsep"></div>
   <div class="sbox" id="leadsSearchBox"><input type="text" id="qS" placeholder="Search leads…" oninput="renderAll()"></div>
   <select class="sel" id="qSt" onchange="renderAll()">
@@ -1016,9 +1032,17 @@ select option{background:var(--s2)}
 <!-- IMPORT MODAL -->
 <div class="overlay" id="importOv" onclick="if(event.target.id==='importOv')closeImportModal()">
 <div class="modal sm">
-  <div class="mhd"><span class="mtitle">Import Leads</span><button class="mcls" onclick="closeImportModal()">&#x2715;</button></div>
+  <div class="mhd"><span class="mtitle">Import / Update Leads</span><button class="mcls" onclick="closeImportModal()">&#x2715;</button></div>
   <div class="mbody">
-    <p style="font-size:12px;color:var(--t2);line-height:1.7">Upload a CSV or Excel file. Excel files will show a column-mapping step. CSV files are auto-mapped.</p>
+    <div style="margin-bottom:10px">
+      <div style="font-size:11px;color:var(--t2);margin-bottom:5px;font-weight:500">Mode</div>
+      <div style="display:flex;gap:4px">
+        <button class="imp-mode-pill active" id="imp-mode-skip" onclick="setImportMode('skip')">Add new only</button>
+        <button class="imp-mode-pill" id="imp-mode-overwrite" onclick="setImportMode('overwrite')">Add + update</button>
+        <button class="imp-mode-pill" id="imp-mode-update-only" onclick="setImportMode('update-only')">Update only</button>
+      </div>
+      <div id="importModeDesc" style="font-size:11px;color:var(--t3);margin-top:6px;line-height:1.6">Insert new leads from the file; skip rows that match an existing business name.</div>
+    </div>
     <div class="import-drop" id="importDrop" onclick="document.getElementById('csvFileInput2').click()" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="this.classList.remove('drag');handleCSVDrop(event)">
       <div class="import-drop-icon">📄</div>
       <div style="font-size:13px;font-weight:500;margin-bottom:4px">Drop file here or click to browse</div>
@@ -1026,13 +1050,6 @@ select option{background:var(--s2)}
     </div>
     <input type="file" id="csvFileInput2" accept=".csv,.xlsx,.xls" style="display:none" onchange="handleCSVFile(this)">
     <div class="import-status" id="importStatus"></div>
-    <div id="importDupRow" style="display:none;margin-top:8px;padding:8px 12px;background:rgba(184,119,22,0.10);border-radius:8px;font-size:12px;color:var(--warn);align-items:center;gap:10px">
-      <span id="importDupMsg"></span>
-      <label style="margin-left:auto;display:flex;align-items:center;gap:6px;cursor:pointer;white-space:nowrap">
-        <input type="checkbox" id="importDupOverwrite" onchange="updateImportDupMode(this.checked)" style="cursor:pointer">
-        Overwrite duplicates
-      </label>
-    </div>
     <details style="margin-top:4px">
       <summary style="font-size:11px;color:var(--t3);cursor:pointer;padding:6px 0">CSV column format guide</summary>
       <div style="font-size:11px;color:var(--t3);line-height:1.8;margin-top:8px;background:var(--s2);padding:10px 14px;border-radius:8px">
@@ -2275,14 +2292,17 @@ function renderStats(){
 
 /* ── VIEW MODE ── */
 let currentView = 'leads';
+let bulkMode = false;
+let bulkSelected = new Set();
 let tvFilters = { status: '', type: '', search: '' };
 
 function setView(view) {
+  if (bulkMode) exitBulkMode();
   currentView = view;
   document.querySelectorAll('.view-tab').forEach(el => el.classList.toggle('active', el.dataset.view === view));
   const leadsArea = document.getElementById('leadsArea');
   const ticketsArea = document.getElementById('ticketsArea');
-  const leadsFilters = document.querySelectorAll('#qS,#qSt,#qFu,#qPr,#leadsSearchBox,#newLeadBtn');
+  const leadsFilters = document.querySelectorAll('#qS,#qSt,#qFu,#qPr,#leadsSearchBox,#newLeadBtn,#bulkSelectBtn');
   if (view === 'leads') {
     leadsArea.style.display = '';
     ticketsArea.style.display = 'none';
@@ -2406,10 +2426,12 @@ function renderAll(){
     const delBadge=l.delMode&&l.delMode!=='none'?delBadgeMap[l.delMode]||'':'';
 
     const stageOpts = STAGES.map(s=>`<div class="sd-opt${s===l.stage?' sd-active':''}" onclick="quickChangeStage('${l.id}','${s}');closeStageDropdown('${l.id}')"><span class="sbadge ${scls(s)}">${s}</span></div>`).join('');
+    const isSel = bulkSelected.has(l.id);
     return`<div class="deal-group">
-      <div class="card ${cc}" data-id="${l.id}">
+      <div class="card ${cc}${isSel?' selected':''}" data-id="${l.id}">
+        ${bulkMode?`<input type="checkbox" class="card-cb"${isSel?' checked':''} onclick="event.stopPropagation();toggleSelectLead('${l.id}')" title="Select">`:'' }
         <div class="ctop">
-          <div class="ctop-l">
+          <div class="ctop-l"${bulkMode?` onclick="toggleSelectLead('${l.id}')" style="cursor:pointer;user-select:none"`:''}>
             <div class="cdeal">${esc(l.deal||'Unnamed')}</div>
             ${sub?`<div class="csub">${esc(sub)}</div>`:''}
             ${locDisplay?`<div style="display:flex;flex-wrap:wrap;gap:3px;margin-top:4px">${locDisplay}</div>`:''}
@@ -2832,8 +2854,9 @@ function openImportModal() {
   document.getElementById('importBtn').disabled = true;
   _importRows = []; _importHeaders = []; _importRawRows = [];
   _importDupMode = 'skip';
-  const dr = document.getElementById('importDupRow'); if (dr) dr.style.display = 'none';
-  const cb = document.getElementById('importDupOverwrite'); if (cb) cb.checked = false;
+  document.querySelectorAll('.imp-mode-pill').forEach(p => p.classList.toggle('active', p.id === 'imp-mode-skip'));
+  const desc = document.getElementById('importModeDesc'); if (desc) desc.textContent = _importModeDescs['skip'];
+  const btn = document.getElementById('importBtn'); if (btn) btn.textContent = 'Import Leads';
 }
 
 function closeImportModal() {
@@ -2841,6 +2864,8 @@ function closeImportModal() {
   _importRows = []; _importHeaders = []; _importRawRows = [];
   _importDupMode = 'skip';
   const inp = document.getElementById('csvFileInput2'); if (inp) inp.value = '';
+  document.querySelectorAll('.imp-mode-pill').forEach(p => p.classList.toggle('active', p.id === 'imp-mode-skip'));
+  const btn = document.getElementById('importBtn'); if (btn) btn.textContent = 'Import Leads';
 }
 
 function closeImportMap() {
@@ -2949,13 +2974,8 @@ function confirmMappedImport() {
   document.getElementById('importMapOv').classList.remove('open');
   if (!_importRows.length) { toast('⚠ No valid rows to import'); return; }
   // Show import modal with dup info before importing
-  const cnt = _importRows.length;
-  setImportStatus(`Ready to import ${cnt} lead${cnt!==1?'s':''}.`, 'ok');
-  document.getElementById('importBtn').disabled = false;
-  _importDupMode = 'skip';
-  const cb = document.getElementById('importDupOverwrite'); if (cb) cb.checked = false;
-  showImportDupInfo();
   document.getElementById('importOv').classList.add('open');
+  showImportDupInfo();
 }
 
 function processCSVFile(file) {
@@ -3065,18 +3085,43 @@ function splitCSVLine(line) {
   return result;
 }
 
-function showImportDupInfo() {
-  const dups = _importRows.filter(r => leads.some(l => l.deal.trim().toLowerCase() === r.deal.trim().toLowerCase()));
-  const dr = document.getElementById('importDupRow');
-  const dm = document.getElementById('importDupMsg');
-  if (!dr || !dm) return;
-  if (!dups.length) { dr.style.display = 'none'; return; }
-  dm.textContent = `${dups.length} duplicate${dups.length!==1?'s':''} found (same business name).`;
-  dr.style.display = 'flex';
+const _importModeDescs = {
+  'skip':        'Insert new leads from the file; skip rows that match an existing business name.',
+  'overwrite':   'Insert new leads and overwrite any existing leads with the same business name.',
+  'update-only': 'Only update existing leads matched by business name; ignore rows with no match.'
+};
+function setImportMode(mode) {
+  _importDupMode = mode;
+  document.querySelectorAll('.imp-mode-pill').forEach(p => p.classList.toggle('active', p.id === 'imp-mode-' + mode));
+  const desc = document.getElementById('importModeDesc');
+  if (desc) desc.textContent = _importModeDescs[mode] || '';
+  const btn = document.getElementById('importBtn');
+  if (btn) btn.textContent = mode === 'update-only' ? 'Update Leads' : 'Import Leads';
+  showImportDupInfo();
 }
 
-function updateImportDupMode(overwrite) {
-  _importDupMode = overwrite ? 'overwrite' : 'skip';
+function showImportDupInfo() {
+  if (!_importRows.length) return;
+  const dups = _importRows.filter(r => leads.some(l => l.deal.trim().toLowerCase() === r.deal.trim().toLowerCase()));
+  const news = _importRows.length - dups.length;
+  let msg = '', type = 'ok';
+  if (_importDupMode === 'skip') {
+    if (!news) { msg = `No new leads — all ${dups.length} row${dups.length!==1?'s':''} match existing records`; type = 'err'; }
+    else { msg = `${news} new lead${news!==1?'s':''} ready`; if (dups.length) msg += ` · ${dups.length} duplicate${dups.length!==1?'s':''} will be skipped`; }
+  } else if (_importDupMode === 'overwrite') {
+    const parts = [];
+    if (news) parts.push(`${news} new`);
+    if (dups.length) parts.push(`${dups.length} update${dups.length!==1?'s':''}`);
+    msg = parts.length ? parts.join(' + ') + ' ready' : 'No rows to process';
+    if (!parts.length) type = 'err';
+  } else {
+    if (!dups.length) { msg = 'No matching leads found — nothing to update'; type = 'err'; }
+    else { msg = `${dups.length} matching lead${dups.length!==1?'s':''} will be updated`; if (news) msg += ` · ${news} unmatched row${news!==1?'s':''} skipped`; }
+  }
+  setImportStatus(msg, type);
+  const canImport = _importDupMode === 'update-only' ? dups.length > 0 : news > 0 || (_importDupMode === 'overwrite' && dups.length > 0);
+  const btn = document.getElementById('importBtn');
+  if (btn) btn.disabled = !canImport;
 }
 
 function setImportStatus(msg, type) {
@@ -3097,10 +3142,10 @@ async function confirmImport() {
     const existing = leads.find(l => l.deal.trim().toLowerCase() === row.deal.trim().toLowerCase());
     if (existing) {
       if (_importDupMode === 'skip') { skipped++; continue; }
-      // overwrite — update existing lead
       const leadId = await saveLeadToSupabase(row, existing.id);
       if (leadId) done++; else failed++;
     } else {
+      if (_importDupMode === 'update-only') { skipped++; continue; }
       const leadId = await saveLeadToSupabase(row, null);
       if (leadId) done++; else failed++;
     }
@@ -3109,10 +3154,78 @@ async function confirmImport() {
   await loadFromSupabase();
   setSyncStatus('ok', 'live');
   closeImportModal();
-  let msg = `✓ Imported ${done} lead${done!==1?'s':''}`;
-  if (skipped) msg += `, ${skipped} duplicate${skipped!==1?'s':''} skipped`;
+  const action = _importDupMode === 'update-only' ? 'Updated' : 'Imported';
+  let msg = `✓ ${action} ${done} lead${done!==1?'s':''}`;
+  if (skipped) msg += `, ${skipped} skipped`;
   if (failed)  msg += ` (${failed} failed)`;
   toast(msg);
+}
+
+/* ── BULK SELECT ── */
+function toggleBulkMode() {
+  if (bulkMode) exitBulkMode(); else enterBulkMode();
+}
+function enterBulkMode() {
+  bulkMode = true;
+  document.getElementById('leadsGrid').classList.add('bulk-mode');
+  document.getElementById('bulkSelectBtn').classList.add('active');
+  renderAll();
+}
+function exitBulkMode() {
+  bulkMode = false;
+  bulkSelected.clear();
+  document.getElementById('leadsGrid').classList.remove('bulk-mode');
+  document.getElementById('bulkSelectBtn').classList.remove('active');
+  document.getElementById('bulkBar').classList.remove('open');
+  renderAll();
+}
+function toggleSelectLead(id) {
+  if (bulkSelected.has(id)) bulkSelected.delete(id); else bulkSelected.add(id);
+  const card = document.querySelector(`.card[data-id="${id}"]`);
+  if (card) {
+    card.classList.toggle('selected', bulkSelected.has(id));
+    const cb = card.querySelector('.card-cb');
+    if (cb) cb.checked = bulkSelected.has(id);
+  }
+  const n = bulkSelected.size;
+  document.getElementById('bulkCount').textContent = `${n} selected`;
+  document.getElementById('bulkBar').classList.toggle('open', n > 0);
+}
+async function applyBulkUpdate() {
+  if (!bulkSelected.size) return;
+  const stage  = document.getElementById('bulkStage').value;
+  const pri    = document.getElementById('bulkPri').value;
+  const fuDate = document.getElementById('bulkFuDate').value;
+  if (!stage && !pri && !fuDate) { toast('Pick at least one field to update'); return; }
+  const btn = document.getElementById('bulkApplyBtn');
+  btn.textContent = 'Saving…'; btn.disabled = true;
+  const ids = [...bulkSelected];
+  for (const id of ids) {
+    const l = leads.find(x => x.id === id);
+    if (!l) continue;
+    if (stage) l.stage = stage;
+    if (pri) l.priority = pri;
+    if (fuDate) { l.fuD = fuDate; l.fuR = true; }
+    await saveLeadToSupabase(l, id);
+  }
+  btn.textContent = 'Apply'; btn.disabled = false;
+  document.getElementById('bulkStage').value = '';
+  document.getElementById('bulkPri').value = '';
+  document.getElementById('bulkFuDate').value = '';
+  const n = ids.length;
+  exitBulkMode();
+  await loadFromSupabase();
+  toast(`✓ Updated ${n} lead${n!==1?'s':''}`);
+}
+async function bulkDelete() {
+  if (!bulkSelected.size) return;
+  const n = bulkSelected.size;
+  if (!confirm(`Delete ${n} lead${n!==1?'s':''}? This cannot be undone.`)) return;
+  const ids = [...bulkSelected];
+  for (const id of ids) await deleteLeadFromSupabase(id);
+  exitBulkMode();
+  await loadFromSupabase();
+  toast(`✓ Deleted ${n} lead${n!==1?'s':''}`);
 }
 
 /* ── THEME ── */
@@ -3294,5 +3407,29 @@ function updateTicketDateDisplay() {
 </div>
 
 <div id="themeCircleOverlay"></div>
+
+<!-- BULK ACTION BAR -->
+<div id="bulkBar">
+  <span class="bulk-count" id="bulkCount">0 selected</span>
+  <div class="bulk-sep"></div>
+  <select class="sel" id="bulkStage" style="min-width:130px">
+    <option value="">Set stage…</option>
+    <option>New</option><option>Contacted</option><option>Interested</option>
+    <option>Meeting Set</option><option>Negotiating</option>
+    <option>Closed</option><option>Lost</option><option>No Response</option><option>On Hold</option>
+  </select>
+  <select class="sel" id="bulkPri" style="min-width:120px">
+    <option value="">Set priority…</option>
+    <option>High</option><option>Normal</option><option>Low</option>
+  </select>
+  <div style="display:flex;align-items:center;gap:6px">
+    <label style="font-size:11px;color:var(--t2);white-space:nowrap">Follow-up:</label>
+    <input type="date" class="sel" id="bulkFuDate" style="min-width:130px">
+  </div>
+  <button class="btn primary" id="bulkApplyBtn" onclick="applyBulkUpdate()">Apply</button>
+  <div class="bulk-sep"></div>
+  <button class="btn ghost" onclick="bulkDelete()" style="color:var(--danger);border-color:rgba(220,79,79,0.25)">🗑 Delete</button>
+  <button class="btn ghost" onclick="exitBulkMode()" style="margin-left:auto">✕ Cancel</button>
+</div>
 </body>
 </html>
