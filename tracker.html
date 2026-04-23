@@ -1026,6 +1026,13 @@ select option{background:var(--s2)}
     </div>
     <input type="file" id="csvFileInput2" accept=".csv,.xlsx,.xls" style="display:none" onchange="handleCSVFile(this)">
     <div class="import-status" id="importStatus"></div>
+    <div id="importDupRow" style="display:none;margin-top:8px;padding:8px 12px;background:rgba(184,119,22,0.10);border-radius:8px;font-size:12px;color:var(--warn);align-items:center;gap:10px">
+      <span id="importDupMsg"></span>
+      <label style="margin-left:auto;display:flex;align-items:center;gap:6px;cursor:pointer;white-space:nowrap">
+        <input type="checkbox" id="importDupOverwrite" onchange="updateImportDupMode(this.checked)" style="cursor:pointer">
+        Overwrite duplicates
+      </label>
+    </div>
     <details style="margin-top:4px">
       <summary style="font-size:11px;color:var(--t3);cursor:pointer;padding:6px 0">CSV column format guide</summary>
       <div style="font-size:11px;color:var(--t3);line-height:1.8;margin-top:8px;background:var(--s2);padding:10px 14px;border-radius:8px">
@@ -2816,6 +2823,7 @@ function runFollowUpCheck() {
 let _importRows   = [];
 let _importHeaders = [];
 let _importRawRows = [];
+let _importDupMode = 'skip'; // 'skip' | 'overwrite'
 
 function openImportModal() {
   document.getElementById('importOv').classList.add('open');
@@ -2823,11 +2831,15 @@ function openImportModal() {
   document.getElementById('importStatus').className = 'import-status';
   document.getElementById('importBtn').disabled = true;
   _importRows = []; _importHeaders = []; _importRawRows = [];
+  _importDupMode = 'skip';
+  const dr = document.getElementById('importDupRow'); if (dr) dr.style.display = 'none';
+  const cb = document.getElementById('importDupOverwrite'); if (cb) cb.checked = false;
 }
 
 function closeImportModal() {
   document.getElementById('importOv').classList.remove('open');
   _importRows = []; _importHeaders = []; _importRawRows = [];
+  _importDupMode = 'skip';
   const inp = document.getElementById('csvFileInput2'); if (inp) inp.value = '';
 }
 
@@ -2936,7 +2948,14 @@ function confirmMappedImport() {
   });
   document.getElementById('importMapOv').classList.remove('open');
   if (!_importRows.length) { toast('⚠ No valid rows to import'); return; }
-  confirmImport();
+  // Show import modal with dup info before importing
+  const cnt = _importRows.length;
+  setImportStatus(`Ready to import ${cnt} lead${cnt!==1?'s':''}.`, 'ok');
+  document.getElementById('importBtn').disabled = false;
+  _importDupMode = 'skip';
+  const cb = document.getElementById('importDupOverwrite'); if (cb) cb.checked = false;
+  showImportDupInfo();
+  document.getElementById('importOv').classList.add('open');
 }
 
 function processCSVFile(file) {
@@ -3025,6 +3044,7 @@ function parseCSV(text) {
   if (errs.length) msg += ` (${errs.length} row${errs.length!==1?'s':''} skipped)`;
   setImportStatus(msg, 'ok');
   document.getElementById('importBtn').disabled = false;
+  showImportDupInfo();
 }
 
 function splitCSVLine(line) {
@@ -3045,6 +3065,20 @@ function splitCSVLine(line) {
   return result;
 }
 
+function showImportDupInfo() {
+  const dups = _importRows.filter(r => leads.some(l => l.deal.trim().toLowerCase() === r.deal.trim().toLowerCase()));
+  const dr = document.getElementById('importDupRow');
+  const dm = document.getElementById('importDupMsg');
+  if (!dr || !dm) return;
+  if (!dups.length) { dr.style.display = 'none'; return; }
+  dm.textContent = `${dups.length} duplicate${dups.length!==1?'s':''} found (same business name).`;
+  dr.style.display = 'flex';
+}
+
+function updateImportDupMode(overwrite) {
+  _importDupMode = overwrite ? 'overwrite' : 'skip';
+}
+
 function setImportStatus(msg, type) {
   const el = document.getElementById('importStatus');
   el.textContent = msg;
@@ -3058,17 +3092,27 @@ async function confirmImport() {
   btn.disabled = true;
   setSyncStatus('loading', 'importing…');
 
-  let done = 0, failed = 0;
+  let done = 0, skipped = 0, failed = 0;
   for (const row of _importRows) {
-    const leadId = await saveLeadToSupabase(row, null);
-    if (leadId) done++;
-    else failed++;
+    const existing = leads.find(l => l.deal.trim().toLowerCase() === row.deal.trim().toLowerCase());
+    if (existing) {
+      if (_importDupMode === 'skip') { skipped++; continue; }
+      // overwrite — update existing lead
+      const leadId = await saveLeadToSupabase(row, existing.id);
+      if (leadId) done++; else failed++;
+    } else {
+      const leadId = await saveLeadToSupabase(row, null);
+      if (leadId) done++; else failed++;
+    }
   }
 
   await loadFromSupabase();
   setSyncStatus('ok', 'live');
   closeImportModal();
-  toast(`✓ Imported ${done} lead${done!==1?'s':''}${failed?` (${failed} failed)`:''}`);
+  let msg = `✓ Imported ${done} lead${done!==1?'s':''}`;
+  if (skipped) msg += `, ${skipped} duplicate${skipped!==1?'s':''} skipped`;
+  if (failed)  msg += ` (${failed} failed)`;
+  toast(msg);
 }
 
 /* ── THEME ── */
