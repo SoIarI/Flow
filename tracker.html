@@ -736,64 +736,30 @@ select option{background:var(--s2)}
       </div>
     </div>
     <div class="frow">
-      <div class="fg"><label class="flbl">Business Type</label>
-        <select id="f_type_sel" onchange="onTypeChange()">
-          <option value="">— Select type —</option>
-          <optgroup label="Retail &amp; Food">
-            <option value="Retail Shop">Retail Shop</option>
-            <option value="Supermarket / Grocery">Supermarket / Grocery</option>
-            <option value="Restaurant">Restaurant</option>
-            <option value="Café / Coffee Shop">Café / Coffee Shop</option>
-            <option value="Bakery">Bakery</option>
-            <option value="Food Stall / Takeaway">Food Stall / Takeaway</option>
-          </optgroup>
-          <optgroup label="Professional Services">
-            <option value="Consulting">Consulting</option>
-            <option value="IT Services">IT Services</option>
-            <option value="Marketing Agency">Marketing Agency</option>
-            <option value="Legal / Law Firm">Legal / Law Firm</option>
-            <option value="Accounting / Finance">Accounting / Finance</option>
-            <option value="Architecture / Design">Architecture / Design</option>
-            <option value="HR & Recruitment">HR & Recruitment</option>
-          </optgroup>
-          <optgroup label="Health & Wellness">
-            <option value="Clinic / Doctor">Clinic / Doctor</option>
-            <option value="Dental Clinic">Dental Clinic</option>
-            <option value="Spa & Beauty Salon">Spa & Beauty Salon</option>
-            <option value="Gym / Fitness">Gym / Fitness</option>
-            <option value="Physiotherapy">Physiotherapy</option>
-            <option value="Mental Health">Mental Health</option>
-          </optgroup>
-          <optgroup label="Home & Property">
-            <option value="Cleaning Service">Cleaning Service</option>
-            <option value="Plumbing & Electrical">Plumbing & Electrical</option>
-            <option value="AC Service & Repair">AC Service & Repair</option>
-            <option value="Renovation / Handyman">Renovation / Handyman</option>
-            <option value="Pest Control">Pest Control</option>
-            <option value="Security Services">Security Services</option>
-          </optgroup>
-          <optgroup label="Education & Training">
-            <option value="Tutoring">Tutoring</option>
-            <option value="Language School">Language School</option>
-            <option value="Driving School">Driving School</option>
-            <option value="Vocational Training">Vocational Training</option>
-            <option value="Music / Arts School">Music / Arts School</option>
-          </optgroup>
-          <optgroup label="Events & Creative">
-            <option value="Photography / Videography">Photography / Videography</option>
-            <option value="Event Planning">Event Planning</option>
-            <option value="Catering">Catering</option>
-            <option value="Entertainment">Entertainment</option>
-          </optgroup>
-          <optgroup label="Transport & Logistics">
-            <option value="Courier / Delivery">Courier / Delivery</option>
-            <option value="Moving Service">Moving Service</option>
-            <option value="Travel Agency">Travel Agency</option>
-          </optgroup>
+      <div class="fg"><label class="flbl">Business Category</label>
+        <select id="f_type_cat" onchange="onTypeCatChange()">
+          <option value="">— Select category —</option>
+          <option value="Retail &amp; Food">Retail &amp; Food</option>
+          <option value="Professional Services">Professional Services</option>
+          <option value="Health &amp; Wellness">Health &amp; Wellness</option>
+          <option value="Home &amp; Property">Home &amp; Property</option>
+          <option value="Education &amp; Training">Education &amp; Training</option>
+          <option value="Events &amp; Creative">Events &amp; Creative</option>
+          <option value="Transport &amp; Logistics">Transport &amp; Logistics</option>
           <option value="custom">Other / Custom…</option>
         </select>
-        <input type="text" id="f_type" placeholder="Describe business type…" style="display:none;margin-top:6px">
       </div>
+      <div class="fg" id="f_type_sub_wrap" style="display:none">
+        <label class="flbl">Business Type</label>
+        <select id="f_type_sub" onchange="onTypeSubChange()">
+          <option value="">— Select type —</option>
+        </select>
+      </div>
+      <div class="fg" id="f_type_custom_wrap" style="display:none">
+        <label class="flbl">Describe type</label>
+        <input type="text" id="f_type" placeholder="e.g. Photography Studio, Car Wash…">
+      </div>
+      <input type="hidden" id="f_type_hidden">
       <div class="fg"><label class="flbl">No. of Listings / Services</label><input type="text" id="f_branches" placeholder="e.g. 5, 10+"></div>
     </div>
 
@@ -1639,25 +1605,73 @@ function getLocValue() {
 }
 
 /* ── TYPE DROPDOWN ── */
-function onTypeChange(){
-  const sel=document.getElementById('f_type_sel').value;
-  const inp=document.getElementById('f_type');
-  if(sel==='custom'){inp.style.display='block';inp.focus();inp.value=''}
-  else{inp.style.display='none';inp.value=sel}
+const BIZ_TYPES = {
+  'Retail & Food':          ['Retail Shop','Supermarket / Grocery','Restaurant','Café / Coffee Shop','Bakery','Food Stall / Takeaway'],
+  'Professional Services':  ['Consulting','IT Services','Marketing Agency','Legal / Law Firm','Accounting / Finance','Architecture / Design','HR & Recruitment'],
+  'Health & Wellness':      ['Clinic / Doctor','Dental Clinic','Spa & Beauty Salon','Gym / Fitness','Physiotherapy','Mental Health'],
+  'Home & Property':        ['Cleaning Service','Plumbing & Electrical','AC Service & Repair','Renovation / Handyman','Pest Control','Security Services'],
+  'Education & Training':   ['Tutoring','Language School','Driving School','Vocational Training','Music / Arts School'],
+  'Events & Creative':      ['Photography / Videography','Event Planning','Catering','Entertainment'],
+  'Transport & Logistics':  ['Courier / Delivery','Moving Service','Travel Agency'],
+};
+
+function _populateSubSel(cat) {
+  const sub = document.getElementById('f_type_sub');
+  sub.innerHTML = '<option value="">— Select type —</option>';
+  (BIZ_TYPES[cat] || []).forEach(t => {
+    const o = document.createElement('option'); o.value = t; o.textContent = t; sub.appendChild(o);
+  });
 }
-function loadTypeState(val){
-  const sel=document.getElementById('f_type_sel');
-  const inp=document.getElementById('f_type');
-  // Try to match against known options
-  const knownOpts=['Consulting','IT Services','Marketing Agency','Legal / Law Firm','Accounting / Finance','Architecture / Design','HR & Recruitment','Clinic / Doctor','Dental Clinic','Spa & Beauty Salon','Gym / Fitness','Physiotherapy','Mental Health','Cleaning Service','Plumbing & Electrical','AC Service & Repair','Renovation / Handyman','Pest Control','Security Services','Tutoring','Language School','Driving School','Vocational Training','Music / Arts School','Photography / Videography','Event Planning','Catering','Entertainment','Courier / Delivery','Moving Service','Travel Agency'];
-  if(!val){sel.value='';inp.style.display='none';inp.value=''}
-  else if(knownOpts.includes(val)){sel.value=val;inp.style.display='none';inp.value=val}
-  else{sel.value='custom';inp.style.display='block';inp.value=val}
+
+function onTypeCatChange() {
+  const cat = document.getElementById('f_type_cat').value;
+  const subWrap = document.getElementById('f_type_sub_wrap');
+  const cusWrap = document.getElementById('f_type_custom_wrap');
+  if (!cat) {
+    subWrap.style.display = 'none'; cusWrap.style.display = 'none';
+  } else if (cat === 'custom') {
+    subWrap.style.display = 'none'; cusWrap.style.display = '';
+    document.getElementById('f_type').value = ''; document.getElementById('f_type').focus();
+  } else {
+    _populateSubSel(cat);
+    subWrap.style.display = ''; cusWrap.style.display = 'none';
+    document.getElementById('f_type_sub').value = '';
+  }
 }
-function getTypeValue(){
-  const sel=document.getElementById('f_type_sel').value;
-  if(sel==='custom')return document.getElementById('f_type').value.trim();
-  return document.getElementById('f_type').value.trim()||sel;
+
+function onTypeSubChange() { /* value read by getTypeValue */ }
+
+function loadTypeState(val) {
+  const catSel  = document.getElementById('f_type_cat');
+  const subWrap = document.getElementById('f_type_sub_wrap');
+  const cusWrap = document.getElementById('f_type_custom_wrap');
+  if (!val) {
+    catSel.value = ''; subWrap.style.display = 'none'; cusWrap.style.display = 'none'; return;
+  }
+  // Find which category contains this sub-type
+  for (const [cat, subs] of Object.entries(BIZ_TYPES)) {
+    if (subs.includes(val)) {
+      catSel.value = cat; _populateSubSel(cat);
+      subWrap.style.display = ''; cusWrap.style.display = 'none';
+      document.getElementById('f_type_sub').value = val; return;
+    }
+  }
+  // Check if val is a category name itself
+  if (BIZ_TYPES[val]) {
+    catSel.value = val; _populateSubSel(val);
+    subWrap.style.display = ''; cusWrap.style.display = 'none'; return;
+  }
+  // Custom value
+  catSel.value = 'custom'; subWrap.style.display = 'none'; cusWrap.style.display = '';
+  document.getElementById('f_type').value = val;
+}
+
+function getTypeValue() {
+  const cat = document.getElementById('f_type_cat').value;
+  if (!cat) return '';
+  if (cat === 'custom') return document.getElementById('f_type').value.trim();
+  const sub = document.getElementById('f_type_sub')?.value;
+  return sub || cat;
 }
 
 function load(){/* data loaded from Supabase via loadFromSupabase() */}
@@ -1845,7 +1859,7 @@ function updCtc(i,f,v){ctcs[i][f]=v}
 function openLeadModal(id=null){
   editId=id;
   document.getElementById('lmTitle').textContent=id?'Edit Lead':'New Lead';
-  const sf=['deal','loc','type','branches','soft','del','notes','lc'];
+  const sf=['deal','loc','branches','soft','del','notes','lc'];
   const ch=['em','wa','vb','cl','ip'];
   if(id){
     const l=leads.find(x=>x.id===id);if(!l)return;
@@ -2565,7 +2579,7 @@ function snapLeadForm() {
   return JSON.stringify({
     deal: document.getElementById('f_deal').value,
     loc: document.getElementById('f_loc').value,
-    type: document.getElementById('f_type').value,
+    type: (document.getElementById('f_type_cat')?.value||'') + '|' + (document.getElementById('f_type_sub')?.value||'') + '|' + (document.getElementById('f_type')?.value||''),
     branches: document.getElementById('f_branches').value,
     soft: document.getElementById('f_soft').value,
     del: document.getElementById('f_del').value,
