@@ -739,7 +739,8 @@ select option{background:var(--s2)}
       <div class="fg"><label class="flbl">Business Category</label>
         <select id="f_type_cat" onchange="onTypeCatChange()">
           <option value="">— Select category —</option>
-          <option value="Retail &amp; Food">Retail &amp; Food</option>
+          <option value="Retail">Retail</option>
+          <option value="Food &amp; Beverage">Food &amp; Beverage</option>
           <option value="Professional Services">Professional Services</option>
           <option value="Health &amp; Wellness">Health &amp; Wellness</option>
           <option value="Home &amp; Property">Home &amp; Property</option>
@@ -1606,7 +1607,8 @@ function getLocValue() {
 
 /* ── TYPE DROPDOWN ── */
 const BIZ_TYPES = {
-  'Retail & Food':          ['Retail Shop','Supermarket / Grocery','Restaurant','Café / Coffee Shop','Bakery','Food Stall / Takeaway'],
+  'Retail':                 ['Retail Shop','Supermarket / Grocery','Pharmacy','Clothing Store','Electronics Shop','Hardware Store'],
+  'Food & Beverage':        ['Restaurant','Café / Coffee Shop','Bakery','Food Stall / Takeaway','Juice Bar','Ice Cream / Desserts'],
   'Professional Services':  ['Consulting','IT Services','Marketing Agency','Legal / Law Firm','Accounting / Finance','Architecture / Design','HR & Recruitment'],
   'Health & Wellness':      ['Clinic / Doctor','Dental Clinic','Spa & Beauty Salon','Gym / Fitness','Physiotherapy','Mental Health'],
   'Home & Property':        ['Cleaning Service','Plumbing & Electrical','AC Service & Repair','Renovation / Handyman','Pest Control','Security Services'],
