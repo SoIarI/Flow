@@ -32,6 +32,16 @@
 /* ── NOTIFICATION SETTINGS ── */
 .notif-panel{display:none;position:fixed;right:0;top:0;bottom:0;z-index:140;width:340px;background:var(--s1);border-left:1px solid var(--b2);flex-direction:column;overflow:hidden}
 .notif-panel.open{display:flex;animation:sr 0.18s ease}
+/* ── USERS PANEL ── */
+.users-panel{display:none;position:fixed;right:0;top:0;bottom:0;z-index:141;width:420px;background:var(--s1);border-left:1px solid var(--b2);flex-direction:column;overflow:hidden}
+.users-panel.open{display:flex;animation:sr 0.18s ease}
+.up-user-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--b1)}
+.up-user-row:last-child{border-bottom:none}
+.up-avatar{width:30px;height:30px;border-radius:50%;background:var(--accent-dim);border:1px solid rgba(91,106,240,0.3);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--accent);font-weight:700;flex-shrink:0}
+.up-role-badge{font-size:9px;padding:2px 6px;border-radius:4px;font-weight:600}
+.up-role-admin{background:rgba(91,106,240,0.15);color:var(--accent)}
+.up-role-rep{background:rgba(184,119,22,0.15);color:var(--warn)}
+.up-add-form{background:var(--s2);border:1px solid var(--b1);border-radius:var(--r);padding:14px;display:flex;flex-direction:column;gap:10px;margin-bottom:6px}
 .np-head{padding:15px 20px;border-bottom:1px solid var(--b1);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
 .np-title{font-family:"Syne",sans-serif;font-weight:700;font-size:13.5px}
 .np-body{padding:16px 20px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:14px}
@@ -467,8 +477,9 @@ select option{background:var(--s2)}
 .view-tab:hover:not(.active){color:var(--t2)}
 
 /* ── ALL TICKETS VIEW ── */
-.tv-ticket{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:13px 16px;display:flex;align-items:flex-start;gap:12px;transition:border-color 0.15s,box-shadow 0.15s}
+.tv-ticket{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:13px 16px;display:flex;align-items:flex-start;gap:12px;transition:border-color 0.15s,box-shadow 0.15s;cursor:pointer;flex-wrap:wrap}
 .tv-ticket:hover{border-color:var(--b2);box-shadow:0 2px 8px rgba(0,0,0,0.06)}
+.tv-ticket.expanded{background:var(--s2);border-color:var(--accent)}
 .tv-toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--b1);align-items:center}
 
 /* ── ONBOARDING SECTION ── */
@@ -500,6 +511,15 @@ select option{background:var(--s2)}
 /* ── ROLE-BASED ACCESS ── */
 body.rep-mode .admin-only{display:none!important}
 
+/* ── PAGINATION ── */
+.pg-bar{display:flex;align-items:center;gap:6px;padding:12px 0 4px;flex-wrap:wrap}
+.pg-btn{min-width:30px;height:28px;padding:0 8px;border:1px solid var(--b2);border-radius:6px;background:var(--s2);color:var(--t2);font-size:11.5px;cursor:pointer;transition:background 0.12s,color 0.12s}
+.pg-btn:hover{background:var(--s3)}
+.pg-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.pg-btn:disabled{opacity:0.35;cursor:default}
+.pg-info{font-size:11px;color:var(--t3);margin:0 4px}
+.pg-size{font-size:11px;padding:3px 6px;border:1px solid var(--b2);border-radius:5px;background:var(--s2);color:var(--t2);cursor:pointer}
+
 /* ── TICKET INLINE EDIT ── */
 .ticket{cursor:pointer;transition:background 0.13s}
 .ticket:hover{background:var(--s2)}
@@ -507,13 +527,22 @@ body.rep-mode .admin-only{display:none!important}
 .ticket-inline-edit{padding:10px 12px 12px;border-top:1px solid var(--b1)}
 
 /* ── LIST VIEW ── */
-.leads-table{width:100%;border-collapse:collapse;font-size:12px}
-.leads-table th{text-align:left;padding:8px 12px;font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:0.05em;border-bottom:1px solid var(--b2);white-space:nowrap}
+.list-view-wrap{display:block!important;width:100%}
+.list-table-scroll{overflow-x:auto;overflow-y:auto;max-height:calc(100vh - 240px);border:1px solid var(--b1);border-radius:var(--r)}
+.leads-table{width:100%;border-collapse:collapse;font-size:12px;table-layout:auto}
+.leads-table thead{position:sticky;top:0;z-index:5}
+.leads-table th{text-align:left;padding:9px 12px;font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:0.05em;border-bottom:2px solid var(--b2);white-space:nowrap;background:var(--s2)}
 .leads-table td{padding:9px 12px;border-bottom:1px solid var(--b1);vertical-align:middle;color:var(--t1)}
-.leads-table tr:hover td{background:var(--s2)}
-.leads-table .lt-deal{font-weight:600;color:var(--t1);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.leads-table tbody tr.lt-main:hover td{background:var(--s2);cursor:pointer}
+.leads-table tbody tr.lt-main.lt-expanded td{background:var(--s2);border-bottom:none}
+.leads-table tbody tr.lt-detail td{background:var(--s2);border-bottom:1px solid var(--b2);padding:0 12px 12px}
+.leads-table .lt-deal{font-weight:600;color:var(--t1)}
 .leads-table .lt-sub{font-size:10.5px;color:var(--t3);margin-top:1px}
 .leads-table .lt-acts{display:flex;gap:4px;justify-content:flex-end}
+.lt-detail-body{display:flex;flex-wrap:wrap;gap:12px 24px;padding-top:8px;font-size:11.5px}
+.lt-detail-body .ltd-row{display:flex;flex-direction:column;gap:2px;min-width:120px}
+.lt-detail-body .ltd-lbl{font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:0.05em}
+.lt-detail-body .ltd-val{color:var(--t2)}
 #layoutBtn{font-size:13px;padding:0 10px;min-width:36px}
 
 /* ── BULK SELECT ── */
@@ -570,6 +599,8 @@ body.rep-mode .admin-only{display:none!important}
   .fu-panel-inner{padding:12px 12px}
   /* Notif panel */
   .notif-panel{width:100%;border-left:none}
+  /* Users panel */
+  .users-panel{width:100%;border-left:none}
   /* Login / config */
   .login-card{padding:32px 22px;border-radius:16px}
   .config-card{padding:28px 22px}
@@ -588,7 +619,7 @@ body.rep-mode .admin-only{display:none!important}
     <div class="login-tagline">CRM — Team Access</div>
     <label class="login-label" for="loginPass">Password</label>
     <input type="password" class="login-input" id="loginPass" placeholder="Enter password…" onkeydown="if(event.key==='Enter')doLogin()">
-    <button class="login-btn" onclick="doLogin()">Sign In →</button>
+    <button class="login-btn" id="loginBtn" onclick="doLogin()">Sign In →</button>
     <div class="login-err" id="loginErr">Incorrect password. Try again.</div>
     <div class="login-footer">Access is restricted to the Flow team.<br>Contact your admin for credentials.</div>
   </div>
@@ -629,6 +660,7 @@ body.rep-mode .admin-only{display:none!important}
       <span id="roleTag" style="display:none;font-size:9px;background:var(--warn-dim,rgba(184,119,22,.15));color:var(--warn);border-radius:4px;padding:1px 5px;font-weight:600">REP</span>
     </div>
     <button id="themeToggleBtn" class="btn ghost" onclick="toggleTheme()" title="Toggle light/dark mode" style="width:32px;padding:0;justify-content:center;font-size:15px">☾</button>
+    <button class="settings-btn admin-only" onclick="openUsersPanel()" title="User Management">👤<span class="ml-hide"> Users</span></button>
     <button class="settings-btn" onclick="openNotifPanel()" title="Notification Settings">⚙<span class="ml-hide"> Notifications</span></button>
     <button class="btn ghost" onclick="doLogout()" style="color:var(--t3)"><span class="ml-hide">Sign out</span><span style="display:none" class="ml-show">↩</span></button>
   </div>
@@ -1196,25 +1228,57 @@ function isLoggedIn() {
   return localStorage.getItem(AUTH_KEY) === '1';
 }
 
-function doLogin() {
+async function doLogin() {
   const pass = document.getElementById('loginPass').value;
   const errEl = document.getElementById('loginErr');
+  const btn = document.getElementById('loginBtn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Checking…'; }
+
+  // Try flow_users table first if Supabase is pre-initialized
+  if (sb) {
+    try {
+      const { data } = await sb.from('flow_users').select('*');
+      if (data && data.length) {
+        const match = data.find(u => u.password === pass);
+        if (match) {
+          localStorage.setItem(AUTH_KEY, '1');
+          localStorage.setItem(ROLE_KEY, match.role === 'admin' ? 'admin' : 'rep');
+          document.getElementById('loginScreen').style.display = 'none';
+          errEl.style.display = 'none';
+          if (btn) { btn.disabled = false; btn.textContent = 'Sign In'; }
+          applyRole();
+          checkConfig();
+          return;
+        }
+        // Table has users but no match — don't fall through to hardcoded
+        showLoginError(errEl, btn);
+        return;
+      }
+    } catch (_) { /* table missing, fall through */ }
+  }
+
+  // Fall back to hardcoded passwords
   const isRep = pass === APP_REP_PASSWORD;
   if (pass === APP_PASSWORD || isRep) {
     localStorage.setItem(AUTH_KEY, '1');
     localStorage.setItem(ROLE_KEY, isRep ? 'rep' : 'admin');
     document.getElementById('loginScreen').style.display = 'none';
     errEl.style.display = 'none';
+    if (btn) { btn.disabled = false; btn.textContent = 'Sign In'; }
     applyRole();
     checkConfig();
   } else {
-    errEl.style.display = 'block';
-    document.getElementById('loginPass').value = '';
-    document.getElementById('loginPass').focus();
-    const card = document.querySelector('.login-card');
-    card.style.animation = 'shake 0.3s ease';
-    setTimeout(() => card.style.animation = '', 300);
+    showLoginError(errEl, btn);
   }
+}
+
+function showLoginError(errEl, btn) {
+  if (errEl) errEl.style.display = 'block';
+  if (btn) { btn.disabled = false; btn.textContent = 'Sign In'; }
+  const passEl = document.getElementById('loginPass');
+  if (passEl) { passEl.value = ''; passEl.focus(); }
+  const card = document.querySelector('.login-card');
+  if (card) { card.style.animation = 'shake 0.3s ease'; setTimeout(() => card.style.animation = '', 300); }
 }
 
 function doLogout() {
@@ -1308,6 +1372,98 @@ function closeNotifPanel() {
   document.getElementById('notifPanel').classList.remove('open');
 }
 
+// ── USER MANAGEMENT PANEL ──────────────────────────────────────
+let _editingUserId = null;
+
+async function openUsersPanel() {
+  document.getElementById('usersPanel').classList.add('open');
+  await loadUsersPanel();
+}
+
+function closeUsersPanel() {
+  document.getElementById('usersPanel').classList.remove('open');
+  cancelAddUser();
+}
+
+async function loadUsersPanel() {
+  const listEl = document.getElementById('upUsersList');
+  if (!sb) { listEl.innerHTML = '<div style="color:var(--t3);font-size:12px;padding:10px">Not connected.</div>'; return; }
+  listEl.innerHTML = '<div style="color:var(--t3);font-size:12px;padding:10px">Loading…</div>';
+  const { data, error } = await sb.from('flow_users').select('*').order('created_at');
+  if (error) {
+    listEl.innerHTML = `<div style="color:var(--danger);font-size:12px;padding:10px">Error: ${esc(error.message)}<br><span style="color:var(--t3)">Run the migration to create the flow_users table.</span></div>`;
+    return;
+  }
+  if (!data.length) {
+    listEl.innerHTML = '<div style="color:var(--t3);font-size:12px;padding:10px">No users defined yet. Default passwords are active.</div>';
+    return;
+  }
+  listEl.innerHTML = data.map(u => `
+    <div class="up-user-row">
+      <div class="up-avatar">${esc((u.name||'?').charAt(0).toUpperCase())}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:12px;font-weight:600;color:var(--t1)">${esc(u.name)}</div>
+        <div style="font-size:10.5px;color:var(--t3);margin-top:1px">Password: <code style="font-size:10px;color:var(--t2)">${esc(u.password)}</code></div>
+      </div>
+      <span class="up-role-badge ${u.role==='admin'?'up-role-admin':'up-role-rep'}">${u.role==='admin'?'Admin':'Rep'}</span>
+      <div style="display:flex;gap:4px">
+        <button class="ib ed" onclick="editUserRecord('${u.id}','${esc(u.name)}','${esc(u.password)}','${u.role}')" title="Edit">✎</button>
+        <button class="ib del" onclick="deleteUserRecord('${u.id}')" title="Delete">✕</button>
+      </div>
+    </div>`).join('');
+}
+
+function showAddUserForm() {
+  _editingUserId = null;
+  document.getElementById('upFormTitle').textContent = 'New User';
+  document.getElementById('up_name').value = '';
+  document.getElementById('up_pass').value = '';
+  document.getElementById('up_role').value = 'rep';
+  document.getElementById('upAddForm').style.display = 'block';
+  document.getElementById('up_name').focus();
+}
+
+function editUserRecord(id, name, pass, role) {
+  _editingUserId = id;
+  document.getElementById('upFormTitle').textContent = 'Edit User';
+  document.getElementById('up_name').value = name;
+  document.getElementById('up_pass').value = pass;
+  document.getElementById('up_role').value = role;
+  document.getElementById('upAddForm').style.display = 'block';
+  document.getElementById('up_name').focus();
+}
+
+function cancelAddUser() {
+  _editingUserId = null;
+  document.getElementById('upAddForm').style.display = 'none';
+}
+
+async function saveUserRecord() {
+  const name = document.getElementById('up_name').value.trim();
+  const pass = document.getElementById('up_pass').value.trim();
+  const role = document.getElementById('up_role').value;
+  if (!name || !pass) { toast('Name and password are required'); return; }
+  const row = { name, password: pass, role };
+  let error;
+  if (_editingUserId) {
+    ({ error } = await sb.from('flow_users').update(row).eq('id', _editingUserId));
+  } else {
+    ({ error } = await sb.from('flow_users').insert(row));
+  }
+  if (error) { toast('⚠ ' + error.message); return; }
+  toast('✓ User saved');
+  cancelAddUser();
+  await loadUsersPanel();
+}
+
+async function deleteUserRecord(id) {
+  if (!confirm('Delete this user? They will only be able to log in with the default password.')) return;
+  const { error } = await sb.from('flow_users').delete().eq('id', id);
+  if (error) { toast('⚠ ' + error.message); return; }
+  toast('User deleted');
+  await loadUsersPanel();
+}
+
 function saveNotifSettings() {
   const keys = ['new_lead','stage','fu_today','fu_over','ticket','ticket_status','meeting','log','closed','include_notes','include_who'];
   const s = {
@@ -1354,6 +1510,10 @@ async function notify(triggerKey, text) {
 
 // ── INIT ──────────────────────────────────────────────────────
 async function init() {
+  // Pre-init Supabase from saved config so login can check flow_users table
+  const cfg = loadConfig();
+  if (cfg && cfg.url && cfg.key && !sb) initSupabase(cfg.url, cfg.key);
+
   if (!isLoggedIn()) {
     document.getElementById('loginScreen').style.display = 'flex';
     setTimeout(() => document.getElementById('loginPass')?.focus(), 100);
@@ -2415,6 +2575,11 @@ function renderStats(){
 /* ── VIEW MODE ── */
 let currentView = 'leads';
 let leadsLayout = 'grid'; // 'grid' | 'list'
+let listRowExpanded = null;
+let dealPage = 1, dealPageSize = 20;
+let ticketPage = 1, ticketPageSize = 20;
+let logPage = 1, logPageSize = 20;
+const PAGE_SIZES = [10, 20, 50, 100];
 let bulkMode = false;
 let bulkSelected = new Set();
 let tvFilters = { status: '', type: '', search: '' };
@@ -2446,10 +2611,18 @@ function setView(view) {
   }
 }
 
+function setDealPage(p) { dealPage = p; renderAll(); }
+function setDealPageSize(s) { dealPageSize = s; dealPage = 1; renderAll(); }
+function setTicketPage(p) { ticketPage = p; renderAllTickets(); }
+function setTicketPageSize(s) { ticketPageSize = s; ticketPage = 1; renderAllTickets(); }
+function setLogPage(p) { logPage = p; renderDrawerLog(); }
+function setLogPageSize(s) { logPageSize = s; logPage = 1; renderDrawerLog(); }
+
 function applyTvFilters() {
   tvFilters.status = document.getElementById('tvStatus').value;
   tvFilters.type   = document.getElementById('tvType').value;
   tvFilters.search = document.getElementById('tvSearch').value.toLowerCase();
+  ticketPage = 1;
   renderAllTickets();
 }
 
@@ -2478,35 +2651,113 @@ function renderAllTickets() {
     container.innerHTML = '<div class="drawer-empty" style="padding:60px 20px;text-align:center"><div class="drawer-empty-ico" style="font-size:28px;opacity:0.3;margin-bottom:8px">◎</div><span style="font-size:12px;color:var(--t3)">No tickets match the current filters</span></div>';
     return;
   }
-  container.innerHTML = filtered.map(t => {
+  const totalTix = filtered.length;
+  ticketPage = Math.min(ticketPage, Math.max(1, Math.ceil(totalTix / ticketPageSize)));
+  const pageTix = filtered.slice((ticketPage - 1) * ticketPageSize, ticketPage * ticketPageSize);
+  const tPager = buildPager(totalTix, ticketPage, ticketPageSize, 'setTicketPage', 'setTicketPageSize');
+  container.innerHTML = pageTix.map(t => {
     const dd = t.date ? diffD(t.date) : null;
     const tDone = t.status==='completed'||t.status==='cancelled';
     const dateClr = !tDone&&dd!==null&&dd<0 ? 'var(--danger)' : !tDone&&dd===0 ? 'var(--warn)' : 'var(--t2)';
-    return `<div class="tv-ticket">
-      <span style="font-size:18px;flex-shrink:0;margin-top:1px">${tIcon[t.type]||'◎'}</span>
-      <div style="flex:1;min-width:0">
-        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:5px">
-          <span style="font-size:12.5px;font-weight:500;color:var(--t1)">${esc(t.title||(t.type.charAt(0).toUpperCase()+t.type.slice(1)))}</span>
-          <span class="ts-badge ${tsClass[t.status]||'ts-pending'}" style="cursor:pointer" onclick="cycleTicketStatusGlobal('${t._lead.id}','${t.id}')">${tsLabel[t.status]||'Pending'}</span>
+    const isExp = globalTicketExpanded === t.id;
+    const expandBody = isExp ? `
+      <div class="ticket-inline-edit" onclick="event.stopPropagation()">
+        <div class="frow" style="gap:6px;margin-bottom:6px">
+          <div class="fg"><label class="flbl" style="font-size:10px">Title</label><input type="text" id="gtie-title-${t.id}" value="${esc(t.title||'')}" style="font-size:12px"></div>
+          <div class="fg"><label class="flbl" style="font-size:10px">Assigned</label><input type="text" id="gtie-assigned-${t.id}" value="${esc(t.assigned||'')}" style="font-size:12px"></div>
         </div>
-        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:10.5px">
-          <span style="color:var(--accent);cursor:pointer;font-weight:500" onclick="navigateToLead('${t._lead.id}')">${esc(t._lead.deal)}</span>
-          ${t.date?`<span style="color:${dateClr}">${fmtDT(t.date,t.time)}</span>`:''}
-          ${t.assigned?`<span style="color:var(--t3)">→ ${esc(t.assigned)}</span>`:''}
-          ${t.notes?`<span style="color:var(--t3);font-style:italic;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(t.notes)}</span>`:''}
+        <div class="frow" style="gap:6px;margin-bottom:6px">
+          <div class="fg"><label class="flbl" style="font-size:10px">Date</label><input type="date" id="gtie-date-${t.id}" value="${t.date||''}" style="font-size:12px"></div>
+          <div class="fg"><label class="flbl" style="font-size:10px">Time</label><input type="time" id="gtie-time-${t.id}" value="${t.time||''}" style="font-size:12px"></div>
+        </div>
+        <div class="fg" style="margin-bottom:6px"><label class="flbl" style="font-size:10px">Notes</label><textarea id="gtie-notes-${t.id}" style="min-height:44px;font-size:12px">${esc(t.notes||'')}</textarea></div>
+        <div style="display:flex;gap:6px">
+          <button class="btn primary" style="padding:4px 12px;font-size:11px" onclick="saveGlobalTicketInline('${t._lead.id}','${t.id}')">Save</button>
+          <button class="btn ghost" style="padding:4px 12px;font-size:11px" onclick="globalTicketExpanded=null;renderAllTickets()">Cancel</button>
+        </div>
+      </div>` : ``;
+    return `<div class="tv-ticket${isExp?' expanded':''}" onclick="toggleGlobalTicketExpand('${t.id}')" style="cursor:pointer;flex-wrap:wrap">
+      <div style="display:flex;align-items:flex-start;gap:10px;width:100%;min-width:0">
+        <span style="font-size:18px;flex-shrink:0;margin-top:1px">${tIcon[t.type]||'◎'}</span>
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:5px">
+            <span style="font-size:12.5px;font-weight:500;color:var(--t1)">${esc(t.title||(t.type.charAt(0).toUpperCase()+t.type.slice(1)))}</span>
+            <span class="ts-badge ${tsClass[t.status]||'ts-pending'}" style="cursor:pointer" onclick="event.stopPropagation();cycleTicketStatusGlobal('${t._lead.id}','${t.id}')">${tsLabel[t.status]||'Pending'}</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:10.5px">
+            <span style="color:var(--accent);cursor:pointer;font-weight:500" onclick="event.stopPropagation();navigateToLead('${t._lead.id}')">${esc(t._lead.deal)}</span>
+            ${t.date?`<span style="color:${dateClr}">${fmtDT(t.date,t.time)}</span>`:''}
+            ${t.assigned?`<span style="color:var(--t3)">→ ${esc(t.assigned)}</span>`:''}
+            ${!isExp&&t.notes?`<span style="color:var(--t3);font-style:italic;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(t.notes)}</span>`:''}
+          </div>
+        </div>
+        <div style="display:flex;gap:4px;flex-shrink:0" onclick="event.stopPropagation()">
+          ${t.date?`<button class="ib" onclick="addToGcal('${t._lead.id}','${t.id}')" title="Add to Calendar"><span class="ib-tip">Calendar</span>📅</button>`:''}
+          <button class="ib del admin-only" onclick="deleteGlobalTicket('${t._lead.id}','${t.id}')" title="Delete"><span class="ib-tip">Delete</span>&#x2715;</button>
         </div>
       </div>
-      <div style="display:flex;gap:4px;flex-shrink:0">
-        ${t.date?`<button class="ib" onclick="addToGcal('${t._lead.id}','${t.id}')" title="Add to Calendar"><span class="ib-tip">Calendar</span>📅</button>`:''}
-        <button class="ib ed" onclick="openTicketModal('${t._lead.id}','${t.id}')" title="Edit"><span class="ib-tip">Edit</span>✎</button>
-      </div>
+      ${expandBody}
     </div>`;
-  }).join('');
+  }).join('') + tPager;
 }
 
 function cycleTicketStatusGlobal(leadId, tickId) {
   cycleTicketStatus(leadId, tickId);
   if (currentView === 'tickets') renderAllTickets();
+}
+
+function toggleGlobalTicketExpand(tickId) {
+  globalTicketExpanded = globalTicketExpanded === tickId ? null : tickId;
+  renderAllTickets();
+}
+
+async function saveGlobalTicketInline(leadId, tickId) {
+  const l = leads.find(x => x.id === leadId);
+  if (!l) return;
+  const t = (l.tickets||[]).find(x => x.id === tickId);
+  if (!t) return;
+  t.title    = document.getElementById('gtie-title-'    + tickId)?.value.trim() || t.title;
+  t.assigned = document.getElementById('gtie-assigned-' + tickId)?.value.trim() || '';
+  t.date     = document.getElementById('gtie-date-'     + tickId)?.value || '';
+  t.time     = document.getElementById('gtie-time-'     + tickId)?.value || '';
+  t.notes    = document.getElementById('gtie-notes-'    + tickId)?.value.trim() || '';
+  const ok = await saveTicketToSupabase(leadId, tickId, t);
+  if (ok) { globalTicketExpanded = null; renderAllTickets(); renderAll(); toast('✓ Ticket updated'); }
+}
+
+async function deleteGlobalTicket(leadId, tickId) {
+  if (!confirm('Delete this ticket?')) return;
+  await deleteTicketFromSupabase(tickId);
+  const l = leads.find(x => x.id === leadId);
+  if (l) l.tickets = (l.tickets||[]).filter(x => x.id !== tickId);
+  if (globalTicketExpanded === tickId) globalTicketExpanded = null;
+  renderAllTickets();
+  renderAll();
+}
+
+/* ── PAGINATION HELPER ── */
+function buildPager(total, page, pageSize, setPage, setSize, sizeKey) {
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const start = (page - 1) * pageSize + 1;
+  const end = Math.min(page * pageSize, total);
+  const pages = [];
+  // always show first, last, current ±1
+  const show = new Set([1, totalPages, page, page - 1, page + 1].filter(p => p >= 1 && p <= totalPages));
+  const sorted = [...show].sort((a, b) => a - b);
+  let prev = 0;
+  for (const p of sorted) {
+    if (prev && p - prev > 1) pages.push('…');
+    pages.push(p);
+    prev = p;
+  }
+  const sizeOpts = PAGE_SIZES.map(s => `<option value="${s}"${s===pageSize?' selected':''}>${s}</option>`).join('');
+  return `<div class="pg-bar">
+    <button class="pg-btn" onclick="${setPage}(${page-1})" ${page<=1?'disabled':''}>‹</button>
+    ${pages.map(p => p === '…' ? `<span class="pg-info">…</span>` : `<button class="pg-btn${p===page?' active':''}" onclick="${setPage}(${p})">${p}</button>`).join('')}
+    <button class="pg-btn" onclick="${setPage}(${page+1})" ${page>=totalPages?'disabled':''}>›</button>
+    <span class="pg-info">${start}–${end} of ${total}</span>
+    <select class="pg-size" onchange="${setSize}(+this.value)">${sizeOpts}</select>
+  </div>`;
 }
 
 /* ── RENDER ── */
@@ -2527,34 +2778,52 @@ function renderAll(){
   const grid=document.getElementById('leadsGrid'),empty=document.getElementById('emptyState');
   if(!list.length){grid.innerHTML='';empty.style.display='block';renderStats();checkReminders();return}
   empty.style.display='none';
+  const totalDeals = list.length;
+  dealPage = Math.min(dealPage, Math.max(1, Math.ceil(totalDeals / dealPageSize)));
+  const pageDeals = list.slice((dealPage-1)*dealPageSize, dealPage*dealPageSize);
+  const pager = buildPager(totalDeals, dealPage, dealPageSize, 'setDealPage', 'setDealPageSize');
   // List view
   if (leadsLayout === 'list') {
     grid.className = 'grid list-view-wrap';
-    grid.innerHTML = `<table class="leads-table"><thead><tr>
-      <th>Business</th><th>Category</th><th>Stage</th><th>Priority</th><th>Follow-up</th><th>Last Contact</th><th></th>
-    </tr></thead><tbody>` + list.map(l => {
+    const rows = pageDeals.map(l => {
       const dd=diffD(l.fuD),isOv=l.fuR&&dd!==null&&dd<0,isTd=l.fuR&&dd===0;
       const fuTxt=l.fuR&&l.fuD?(isOv?`<span style="color:var(--danger)">⚠ ${fmtD(l.fuD)}</span>`:isTd?`<span style="color:var(--warn)">Today</span>`:`<span style="color:var(--t2)">${fmtD(l.fuD)}</span>`):'—';
       const priColor=l.priority==='High'?'var(--accent)':l.priority==='Low'?'var(--t3)':'var(--t2)';
-      return `<tr>
+      const isExp = listRowExpanded === l.id;
+      const mainRow = `<tr class="lt-main${isExp?' lt-expanded':''}" onclick="toggleListRow('${l.id}')">
         <td><div class="lt-deal">${esc(l.deal||'Unnamed')}</div>${(l.contacts||[])[0]?.name?`<div class="lt-sub">${esc(l.contacts[0].name)}</div>`:''}</td>
         <td style="color:var(--t2)">${esc(l.type||'—')}</td>
         <td><span class="sbadge ${scls(l.stage)}">${esc(l.stage)}</span></td>
         <td style="color:${priColor};font-size:11px;font-weight:500">${esc(l.priority)}</td>
         <td>${fuTxt}</td>
         <td style="color:var(--t3)">${l.lc?fmtD(l.lc):'—'}</td>
-        <td><div class="lt-acts">
+        <td><div class="lt-acts" onclick="event.stopPropagation()">
           <button class="ib ed" onclick="openLeadModal('${l.id}')" title="Edit"><span class="ib-tip">Edit</span>✎</button>
           <button class="ib" onclick="openDrawer('${l.id}','tickets')" title="Tickets &amp; Log"><span class="ib-tip">Tickets &amp; Log</span>🎫</button>
           <button class="ib del admin-only" onclick="delLead('${l.id}')" title="Delete"><span class="ib-tip">Delete</span>✕</button>
         </div></td>
       </tr>`;
-    }).join('') + '</tbody></table>';
+      if (!isExp) return mainRow;
+      const locArr=(l.loc||'').split(', ').filter(Boolean);
+      const ctcList=(l.contacts||[]).map(c=>`${esc(c.name||'')}${c.role?' · '+esc(c.role):''}${c.phone?' · '+esc(c.phone):''}`).join('<br>');
+      const detailRow = `<tr class="lt-detail"><td colspan="7"><div class="lt-detail-body">
+        ${locArr.length?`<div class="ltd-row"><div class="ltd-lbl">Locations</div><div class="ltd-val">${locArr.map(v=>esc(v)).join(', ')}</div></div>`:''}
+        ${l.branches?`<div class="ltd-row"><div class="ltd-lbl">Branches</div><div class="ltd-val">${esc(l.branches)}</div></div>`:''}
+        ${l.soft?`<div class="ltd-row"><div class="ltd-lbl">Current POS</div><div class="ltd-val">${esc(l.soft)}</div></div>`:''}
+        ${l.del?`<div class="ltd-row"><div class="ltd-lbl">Delivery App</div><div class="ltd-val">${esc(l.del)}</div></div>`:''}
+        ${ctcList?`<div class="ltd-row"><div class="ltd-lbl">Contacts</div><div class="ltd-val">${ctcList}</div></div>`:''}
+        ${(l.log||[]).length?`<div class="ltd-row"><div class="ltd-lbl">Latest Log</div><div class="ltd-val" style="max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc((l.log[0]?.text||'').slice(0,120))}</div></div>`:''}
+      </div></td></tr>`;
+      return mainRow + detailRow;
+    }).join('');
+    grid.innerHTML = `<div class="list-table-scroll"><table class="leads-table"><thead><tr>
+      <th>Business</th><th>Category</th><th>Stage</th><th>Priority</th><th>Follow-up</th><th>Last Contact</th><th></th>
+    </tr></thead><tbody>${rows}</tbody></table></div>${pager}`;
     renderStats();checkReminders();return;
   }
   grid.className = 'grid';
 
-  grid.innerHTML=list.map(l=>{
+  grid.innerHTML=pageDeals.map(l=>{
     const dd=diffD(l.fuD),isOv=l.fuR&&dd!==null&&dd<0,isTd=l.fuR&&dd===0;
     const isNoResp=l.stage==='No Response';
     const cc=[isOv?'overdue':isTd?'due-today':'',l.priority==='High'?'hipri':'',isNoResp?'no-response':''].filter(Boolean).join(' ');
@@ -2625,7 +2894,7 @@ function renderAll(){
         </button>
       </div>
     </div>`;
-  }).join('');
+  }).join('') + pager;
   renderStats();checkReminders();
 }
 
@@ -2916,7 +3185,8 @@ const LOG_TYPES = ['note','call','email','whatsapp','meeting','visit','other'];
 const LT_LABEL  = {note:'Note',call:'Call',email:'Email',whatsapp:'WhatsApp',meeting:'Meeting',visit:'Visit',other:'Other'};
 let logFilter = '';
 let logDatePreset = 'today';
-let drawerTicketExpanded = null; // 'today' | 'yesterday' | 'custom'
+let drawerTicketExpanded = null;
+let globalTicketExpanded = null;
 let logCustomDateVal = '';
 let editingLogId = null;
 
@@ -2964,7 +3234,11 @@ function renderDrawerLog() {
     wrap.innerHTML = '<div class="drawer-empty"><div class="drawer-empty-ico">📝</div><span>No interactions logged yet.</span></div>';
     return;
   }
-  wrap.innerHTML = entries.map(e => {
+  const totalLog = entries.length;
+  logPage = Math.min(logPage, Math.max(1, Math.ceil(totalLog / logPageSize)));
+  const pageEntries = entries.slice((logPage - 1) * logPageSize, logPage * logPageSize);
+  const lPager = totalLog > logPageSize ? buildPager(totalLog, logPage, logPageSize, 'setLogPage', 'setLogPageSize') : '';
+  wrap.innerHTML = pageEntries.map(e => {
     const d = new Date(e.date);
     const dateStr = d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
     const timeStr = d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
@@ -2993,7 +3267,7 @@ function renderDrawerLog() {
       </div>
       <div class="log-text">${esc(e.text)}</div>
     </div>`;
-  }).join('');
+  }).join('') + lPager;
 }
 
 function setDrawerLogType(type) {
@@ -3438,8 +3712,14 @@ async function confirmImport() {
 
 function toggleLeadsLayout() {
   leadsLayout = leadsLayout === 'grid' ? 'list' : 'grid';
+  listRowExpanded = null;
   const btn = document.getElementById('layoutBtn');
   if (btn) btn.textContent = leadsLayout === 'grid' ? '☰' : '⊞';
+  renderAll();
+}
+
+function toggleListRow(leadId) {
+  listRowExpanded = listRowExpanded === leadId ? null : leadId;
   renderAll();
 }
 
@@ -3732,6 +4012,41 @@ function updateTicketDateDisplay() {
 
     <button class="np-save-btn" onclick="saveNotifSettings()">Save Settings</button>
     <p style="font-size:10px;color:var(--t3);text-align:center;line-height:1.6">Settings are saved on this device. Each team member sets their own notification preferences.</p>
+  </div>
+</div>
+
+<!-- USERS PANEL -->
+<div class="users-panel" id="usersPanel">
+  <div class="np-head">
+    <span class="np-title">👤 User Management</span>
+    <button class="mcls" onclick="closeUsersPanel()">&#x2715;</button>
+  </div>
+  <div class="np-body" id="usersPanelBody">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <span style="font-size:11px;color:var(--t3)">Manage who can access Flow CRM</span>
+      <button class="btn primary" style="font-size:11px;padding:5px 12px" onclick="showAddUserForm()">+ Add User</button>
+    </div>
+    <div id="upAddForm" style="display:none">
+      <div class="up-add-form">
+        <div style="font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:2px" id="upFormTitle">New User</div>
+        <input type="text" class="np-input" id="up_name" placeholder="Display name">
+        <input type="password" class="np-input" id="up_pass" placeholder="Password" autocomplete="new-password">
+        <select class="sel" id="up_role" style="width:100%">
+          <option value="admin">Admin — full access</option>
+          <option value="rep" selected>Rep — no admin actions</option>
+        </select>
+        <div style="display:flex;gap:8px">
+          <button class="btn primary" style="flex:1;font-size:11px" onclick="saveUserRecord()">Save</button>
+          <button class="btn ghost" style="font-size:11px" onclick="cancelAddUser()">Cancel</button>
+        </div>
+      </div>
+    </div>
+    <div id="upUsersList">
+      <div style="text-align:center;padding:20px;color:var(--t3);font-size:12px">Loading users…</div>
+    </div>
+    <div style="background:var(--s2);border-radius:var(--r);padding:12px;font-size:10.5px;color:var(--t3);line-height:1.6">
+      <b style="color:var(--t2)">Note:</b> Users added here can log in with their own password. If no users are defined, the default passwords apply (Admin: <code>Flow2024</code>, Rep: <code>FlowRep2024</code>).
+    </div>
   </div>
 </div>
 
