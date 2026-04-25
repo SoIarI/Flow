@@ -617,10 +617,12 @@ body.rep-mode .admin-only{display:none!important}
   <div class="login-card">
     <div class="login-logo"><div class="login-logo-dot"></div>FLOW</div>
     <div class="login-tagline">CRM — Team Access</div>
+    <label class="login-label" for="loginUser">Username</label>
+    <input type="text" class="login-input" id="loginUser" placeholder="Your name…" onkeydown="if(event.key==='Enter')document.getElementById('loginPass').focus()" autocomplete="username">
     <label class="login-label" for="loginPass">Password</label>
-    <input type="password" class="login-input" id="loginPass" placeholder="Enter password…" onkeydown="if(event.key==='Enter')doLogin()">
+    <input type="password" class="login-input" id="loginPass" placeholder="Enter password…" onkeydown="if(event.key==='Enter')doLogin()" autocomplete="current-password">
     <button class="login-btn" id="loginBtn" onclick="doLogin()">Sign In →</button>
-    <div class="login-err" id="loginErr">Incorrect password. Try again.</div>
+    <div class="login-err" id="loginErr">Incorrect username or password.</div>
     <div class="login-footer">Access is restricted to the Flow team.<br>Contact your admin for credentials.</div>
   </div>
 </div>
@@ -1211,6 +1213,9 @@ body.rep-mode .admin-only{display:none!important}
 const CFG_KEY = 'flow_cfg';
 const AUTH_KEY = 'flow_auth';
 const ROLE_KEY = 'flow_role'; // 'admin' | 'rep'
+const USER_NAME_KEY = 'flow_login_name';
+const APP_ADMIN_NAME = 'Admin';
+const APP_REP_NAME = 'Rep';
 const APP_PASSWORD = 'Flow2024';
 const APP_REP_PASSWORD = 'FlowRep2024';
 function isAdmin() { return localStorage.getItem(ROLE_KEY) !== 'rep'; }
@@ -1229,44 +1234,44 @@ function isLoggedIn() {
 }
 
 async function doLogin() {
+  const user = (document.getElementById('loginUser').value || '').trim();
   const pass = document.getElementById('loginPass').value;
   const errEl = document.getElementById('loginErr');
   const btn = document.getElementById('loginBtn');
+  if (!user) { document.getElementById('loginUser').focus(); return; }
   if (btn) { btn.disabled = true; btn.textContent = 'Checking…'; }
+
+  const finishLogin = (name, role) => {
+    localStorage.setItem(AUTH_KEY, '1');
+    localStorage.setItem(ROLE_KEY, role);
+    localStorage.setItem(USER_NAME_KEY, name);
+    document.getElementById('loginScreen').style.display = 'none';
+    errEl.style.display = 'none';
+    if (btn) { btn.disabled = false; btn.textContent = 'Sign In →'; }
+    applyRole();
+    checkConfig();
+  };
 
   // Try flow_users table first if Supabase is pre-initialized
   if (sb) {
     try {
       const { data } = await sb.from('flow_users').select('*');
       if (data && data.length) {
-        const match = data.find(u => u.password === pass);
-        if (match) {
-          localStorage.setItem(AUTH_KEY, '1');
-          localStorage.setItem(ROLE_KEY, match.role === 'admin' ? 'admin' : 'rep');
-          document.getElementById('loginScreen').style.display = 'none';
-          errEl.style.display = 'none';
-          if (btn) { btn.disabled = false; btn.textContent = 'Sign In'; }
-          applyRole();
-          checkConfig();
-          return;
-        }
-        // Table has users but no match — don't fall through to hardcoded
+        const match = data.find(u =>
+          u.name.toLowerCase() === user.toLowerCase() && u.password === pass
+        );
+        if (match) { finishLogin(match.name, match.role === 'admin' ? 'admin' : 'rep'); return; }
         showLoginError(errEl, btn);
         return;
       }
     } catch (_) { /* table missing, fall through */ }
   }
 
-  // Fall back to hardcoded passwords
-  const isRep = pass === APP_REP_PASSWORD;
-  if (pass === APP_PASSWORD || isRep) {
-    localStorage.setItem(AUTH_KEY, '1');
-    localStorage.setItem(ROLE_KEY, isRep ? 'rep' : 'admin');
-    document.getElementById('loginScreen').style.display = 'none';
-    errEl.style.display = 'none';
-    if (btn) { btn.disabled = false; btn.textContent = 'Sign In'; }
-    applyRole();
-    checkConfig();
+  // Fall back to hardcoded credentials
+  if (user.toLowerCase() === APP_ADMIN_NAME.toLowerCase() && pass === APP_PASSWORD) {
+    finishLogin(APP_ADMIN_NAME, 'admin');
+  } else if (user.toLowerCase() === APP_REP_NAME.toLowerCase() && pass === APP_REP_PASSWORD) {
+    finishLogin(APP_REP_NAME, 'rep');
   } else {
     showLoginError(errEl, btn);
   }
@@ -1274,7 +1279,7 @@ async function doLogin() {
 
 function showLoginError(errEl, btn) {
   if (errEl) errEl.style.display = 'block';
-  if (btn) { btn.disabled = false; btn.textContent = 'Sign In'; }
+  if (btn) { btn.disabled = false; btn.textContent = 'Sign In →'; }
   const passEl = document.getElementById('loginPass');
   if (passEl) { passEl.value = ''; passEl.focus(); }
   const card = document.querySelector('.login-card');
@@ -1285,6 +1290,7 @@ function doLogout() {
   if (!confirm('Sign out? You will need to enter the password again to access Flow Leads.')) return;
   localStorage.removeItem(AUTH_KEY);
   localStorage.removeItem(ROLE_KEY);
+  localStorage.removeItem(USER_NAME_KEY);
   location.reload();
 }
 
@@ -1294,11 +1300,13 @@ function checkConfig() {
     document.getElementById('configScreen').style.display = 'flex';
   } else {
     document.getElementById('configScreen').style.display = 'none';
-    currentUser = { name: cfg.name || 'Team' };
+    const loginName = localStorage.getItem(USER_NAME_KEY);
+    const displayName = loginName || cfg.name || 'Team';
+    currentUser = { name: displayName };
     const nameEl = document.getElementById('userName');
     const avatarEl = document.getElementById('userAvatar');
-    if (nameEl) nameEl.textContent = cfg.name || 'Team';
-    if (avatarEl) avatarEl.textContent = (cfg.name || 'T').charAt(0).toUpperCase();
+    if (nameEl) nameEl.textContent = displayName;
+    if (avatarEl) avatarEl.textContent = displayName.charAt(0).toUpperCase();
     initAndLoad();
   }
 }
@@ -1516,7 +1524,7 @@ async function init() {
 
   if (!isLoggedIn()) {
     document.getElementById('loginScreen').style.display = 'flex';
-    setTimeout(() => document.getElementById('loginPass')?.focus(), 100);
+    setTimeout(() => document.getElementById('loginUser')?.focus(), 100);
     return;
   }
   checkConfig();
