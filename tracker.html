@@ -1249,7 +1249,7 @@ async function doLogin() {
     errEl.style.display = 'none';
     if (btn) { btn.disabled = false; btn.textContent = 'Sign In →'; }
     applyRole();
-    checkConfig();
+    launchApp();
   };
 
   // Try flow_users table first if Supabase is pre-initialized
@@ -1338,13 +1338,14 @@ async function saveConfig() {
     errEl.style.display = 'block'; return;
   }
   localStorage.setItem(CFG_KEY, JSON.stringify({ url, key, name }));
-  currentUser = { name };
+  initSupabase(url, key);
   document.getElementById('configScreen').style.display = 'none';
-  const nameEl = document.getElementById('userName');
-  const avatarEl = document.getElementById('userAvatar');
-  if (nameEl) nameEl.textContent = name;
-  if (avatarEl) avatarEl.textContent = name.charAt(0).toUpperCase();
-  initAndLoad();
+  if (isLoggedIn()) {
+    launchApp();
+  } else {
+    document.getElementById('loginScreen').style.display = 'flex';
+    setTimeout(() => document.getElementById('loginUser')?.focus(), 100);
+  }
 }
 
 function initSupabase(url, key) {
@@ -1518,16 +1519,30 @@ async function notify(triggerKey, text) {
 
 // ── INIT ──────────────────────────────────────────────────────
 async function init() {
-  // Pre-init Supabase from saved config so login can check flow_users table
   const cfg = loadConfig();
-  if (cfg && cfg.url && cfg.key && !sb) initSupabase(cfg.url, cfg.key);
-
+  if (!cfg || !cfg.url || !cfg.key) {
+    document.getElementById('configScreen').style.display = 'flex';
+    return;
+  }
+  if (!sb) initSupabase(cfg.url, cfg.key);
   if (!isLoggedIn()) {
     document.getElementById('loginScreen').style.display = 'flex';
     setTimeout(() => document.getElementById('loginUser')?.focus(), 100);
     return;
   }
-  checkConfig();
+  launchApp();
+}
+
+function launchApp() {
+  const cfg = loadConfig();
+  const loginName = localStorage.getItem(USER_NAME_KEY);
+  const displayName = loginName || cfg?.name || 'Team';
+  currentUser = { name: displayName };
+  const nameEl = document.getElementById('userName');
+  const avatarEl = document.getElementById('userAvatar');
+  if (nameEl) nameEl.textContent = displayName;
+  if (avatarEl) avatarEl.textContent = displayName.charAt(0).toUpperCase();
+  initAndLoad();
 }
 
 async function initAndLoad() {
