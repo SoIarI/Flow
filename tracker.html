@@ -2685,7 +2685,7 @@ function renderAllTickets() {
             <span class="ts-badge ${tsClass[t.status]||'ts-pending'}" style="cursor:pointer" onclick="event.stopPropagation();cycleTicketStatusGlobal('${t._lead.id}','${t.id}')">${tsLabel[t.status]||'Pending'}</span>
           </div>
           <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:10.5px">
-            <span style="color:var(--accent);cursor:pointer;font-weight:500" onclick="event.stopPropagation();navigateToLead('${t._lead.id}')">${esc(t._lead.deal)}</span>
+            <span style="color:var(--accent);cursor:pointer;font-weight:500" onclick="event.stopPropagation();openLeadModal('${t._lead.id}')" title="Open deal details">${esc(t._lead.deal)}</span>
             ${t.date?`<span style="color:${dateClr}">${fmtDT(t.date,t.time)}</span>`:''}
             ${t.assigned?`<span style="color:var(--t3)">→ ${esc(t.assigned)}</span>`:''}
             ${!isExp&&t.notes?`<span style="color:var(--t3);font-style:italic;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(t.notes)}</span>`:''}
