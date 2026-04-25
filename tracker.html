@@ -497,6 +497,25 @@ select option{background:var(--s2)}
 .imp-mode-pill{flex:1;padding:5px 8px;font-size:11px;font-weight:500;border:1px solid var(--b2);border-radius:6px;background:var(--s2);color:var(--t2);cursor:pointer;text-align:center;transition:background 0.14s,color 0.14s,border-color 0.14s}
 .imp-mode-pill.active{background:var(--accent);color:#fff;border-color:var(--accent)}
 
+/* ── ROLE-BASED ACCESS ── */
+body.rep-mode .admin-only{display:none!important}
+
+/* ── TICKET INLINE EDIT ── */
+.ticket{cursor:pointer;transition:background 0.13s}
+.ticket:hover{background:var(--s2)}
+.ticket.expanded{background:var(--s2);border-color:var(--accent)}
+.ticket-inline-edit{padding:10px 12px 12px;border-top:1px solid var(--b1)}
+
+/* ── LIST VIEW ── */
+.leads-table{width:100%;border-collapse:collapse;font-size:12px}
+.leads-table th{text-align:left;padding:8px 12px;font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:0.05em;border-bottom:1px solid var(--b2);white-space:nowrap}
+.leads-table td{padding:9px 12px;border-bottom:1px solid var(--b1);vertical-align:middle;color:var(--t1)}
+.leads-table tr:hover td{background:var(--s2)}
+.leads-table .lt-deal{font-weight:600;color:var(--t1);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.leads-table .lt-sub{font-size:10.5px;color:var(--t3);margin-top:1px}
+.leads-table .lt-acts{display:flex;gap:4px;justify-content:flex-end}
+#layoutBtn{font-size:13px;padding:0 10px;min-width:36px}
+
 /* ── BULK SELECT ── */
 .card-cb{position:absolute;top:11px;left:11px;width:16px;height:16px;accent-color:var(--accent);cursor:pointer;z-index:5;display:none;border-radius:3px}
 .bulk-mode .card{cursor:default}
@@ -607,6 +626,7 @@ select option{background:var(--s2)}
     <div style="display:flex;align-items:center;gap:7px;background:var(--s2);border:1px solid var(--b1);border-radius:99px;padding:5px 14px 5px 9px">
       <div style="width:22px;height:22px;border-radius:50%;background:var(--accent-dim);border:1px solid rgba(91,106,240,0.3);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--accent);font-weight:700" id="userAvatar">P</div>
       <span style="font-size:12px;color:var(--t2);font-weight:500" id="userName" class="ml-hide">Flow</span>
+      <span id="roleTag" style="display:none;font-size:9px;background:var(--warn-dim,rgba(184,119,22,.15));color:var(--warn);border-radius:4px;padding:1px 5px;font-weight:600">REP</span>
     </div>
     <button id="themeToggleBtn" class="btn ghost" onclick="toggleTheme()" title="Toggle light/dark mode" style="width:32px;padding:0;justify-content:center;font-size:15px">☾</button>
     <button class="settings-btn" onclick="openNotifPanel()" title="Notification Settings">⚙<span class="ml-hide"> Notifications</span></button>
@@ -646,10 +666,12 @@ select option{background:var(--s2)}
   <div class="view-tabs">
     <button class="view-tab active" data-view="leads" onclick="setView('leads')">Leads</button>
     <button class="view-tab" data-view="tickets" onclick="setView('tickets')">Tickets</button>
+    <button class="view-tab admin-only" data-view="activity" onclick="setView('activity')">Activity</button>
   </div>
   <div class="tsep"></div>
   <button class="btn primary" id="newLeadBtn" onclick="openLeadModal()">＋ New Lead</button>
   <button class="btn ghost" id="bulkSelectBtn" onclick="toggleBulkMode()" title="Select leads to bulk-update">☑ Select</button>
+  <button class="btn ghost" id="layoutBtn" onclick="toggleLeadsLayout()" title="Switch between grid and list view">☰</button>
   <div class="tsep"></div>
   <div class="sbox" id="leadsSearchBox"><input type="text" id="qS" placeholder="Search leads…" oninput="renderAll()"></div>
   <select class="sel" id="qSt" onchange="renderAll()">
@@ -670,7 +692,7 @@ select option{background:var(--s2)}
   <button class="btn ghost" onclick="exportCSV()">⬇ Export</button>
   <button class="btn ghost" onclick="openImportModal()">⬆ Import</button>
   <input type="file" id="csvFileInput" accept=".csv,.xlsx,.xls" style="display:none" onchange="handleCSVFile(this)">
-  <button class="btn ghost" onclick="clearAll()" style="margin-left:auto;color:var(--danger);border-color:rgba(220,79,79,0.25)" title="Delete all records from database">⚠ Clear DB</button>
+  <button class="btn ghost admin-only" onclick="clearAll()" style="margin-left:auto;color:var(--danger);border-color:rgba(220,79,79,0.25)" title="Delete all records from database">⚠ Clear DB</button>
 </div>
 
 <div class="stats-bar" id="statsBar"></div>
@@ -709,6 +731,23 @@ select option{background:var(--s2)}
     </div>
     <div id="ticketsGrid" style="display:flex;flex-direction:column;gap:6px"></div>
   </div>
+</div>
+
+<div id="activityArea" style="display:none;padding:16px 20px">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap">
+    <span style="font-size:13px;font-weight:600;color:var(--t1)">Activity Log</span>
+    <div style="display:flex;gap:4px;flex-wrap:wrap" id="activityFilterRow">
+      <div class="log-type-opt sel" data-af="" onclick="setActivityFilter('')">All</div>
+      <div class="log-type-opt" data-af="note" onclick="setActivityFilter('note')">📝 Note</div>
+      <div class="log-type-opt" data-af="call" onclick="setActivityFilter('call')">📞 Call</div>
+      <div class="log-type-opt" data-af="email" onclick="setActivityFilter('email')">✉ Email</div>
+      <div class="log-type-opt" data-af="whatsapp" onclick="setActivityFilter('whatsapp')">💬 WhatsApp</div>
+      <div class="log-type-opt" data-af="meeting" onclick="setActivityFilter('meeting')">🤝 Meeting</div>
+      <div class="log-type-opt" data-af="visit" onclick="setActivityFilter('visit')">📍 Visit</div>
+    </div>
+    <div class="sbox" style="min-width:160px;margin-left:auto"><input type="text" id="actSearch" placeholder="Search by lead or text…" oninput="renderActivity()"></div>
+  </div>
+  <div id="activityGrid" style="display:flex;flex-direction:column;gap:5px"></div>
 </div>
 
 <!-- LEAD MODAL -->
@@ -1101,9 +1140,24 @@ select option{background:var(--s2)}
     </div>
     <div class="drawer-pane" id="dpane-log">
       <div class="log-section">
+        <div class="log-filter-bar" id="logFilterBar" style="display:flex;flex-wrap:wrap;gap:4px;padding:10px 14px 0;border-bottom:1px solid var(--b1)">
+          <div class="log-type-opt sel" data-filter="" onclick="setLogFilter('')">All</div>
+          <div class="log-type-opt" data-filter="note" onclick="setLogFilter('note')">📝 Note</div>
+          <div class="log-type-opt" data-filter="call" onclick="setLogFilter('call')">📞 Call</div>
+          <div class="log-type-opt" data-filter="email" onclick="setLogFilter('email')">✉ Email</div>
+          <div class="log-type-opt" data-filter="whatsapp" onclick="setLogFilter('whatsapp')">💬 WhatsApp</div>
+          <div class="log-type-opt" data-filter="meeting" onclick="setLogFilter('meeting')">🤝 Meeting</div>
+          <div class="log-type-opt" data-filter="visit" onclick="setLogFilter('visit')">📍 Visit</div>
+        </div>
         <div class="log-entries" id="drawerLogEntries"></div>
         <div class="log-add">
           <div class="log-type-row" id="drawerLogTypeRow"></div>
+          <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:6px" id="logDateRow">
+            <div class="log-type-opt sel" data-ld="today" onclick="setLogDate('today')">Today</div>
+            <div class="log-type-opt" data-ld="yesterday" onclick="setLogDate('yesterday')">Yesterday</div>
+            <div class="log-type-opt" data-ld="custom" onclick="setLogDate('custom')">Custom…</div>
+            <input type="date" id="logCustomDate" style="display:none;font-size:11px;padding:3px 7px;border:1px solid var(--b2);border-radius:5px;background:var(--s2);color:var(--t1)" onchange="onLogCustomDate()">
+          </div>
           <div class="log-input-row">
             <textarea class="log-textarea" id="drawerLogTa" placeholder="Add a note, log a call…" onkeydown="if(event.ctrlKey&&event.key==='Enter')submitDrawerLog()"></textarea>
             <button class="log-submit" onclick="submitDrawerLog()">Log</button>
@@ -1124,7 +1178,16 @@ select option{background:var(--s2)}
 
 const CFG_KEY = 'flow_cfg';
 const AUTH_KEY = 'flow_auth';
+const ROLE_KEY = 'flow_role'; // 'admin' | 'rep'
 const APP_PASSWORD = 'Flow2024';
+const APP_REP_PASSWORD = 'FlowRep2024';
+function isAdmin() { return localStorage.getItem(ROLE_KEY) !== 'rep'; }
+function applyRole() {
+  const rep = !isAdmin();
+  document.body.classList.toggle('rep-mode', rep);
+  const tag = document.getElementById('roleTag');
+  if (tag) tag.style.display = rep ? 'inline' : 'none';
+}
 const APP_VERSION = '2.0.0';
 const VERSION_URL = 'https://raw.githubusercontent.com/YOUR_USERNAME/flow-leads/main/version.json';
 
@@ -1136,16 +1199,18 @@ function isLoggedIn() {
 function doLogin() {
   const pass = document.getElementById('loginPass').value;
   const errEl = document.getElementById('loginErr');
-  if (pass === APP_PASSWORD) {
+  const isRep = pass === APP_REP_PASSWORD;
+  if (pass === APP_PASSWORD || isRep) {
     localStorage.setItem(AUTH_KEY, '1');
+    localStorage.setItem(ROLE_KEY, isRep ? 'rep' : 'admin');
     document.getElementById('loginScreen').style.display = 'none';
     errEl.style.display = 'none';
+    applyRole();
     checkConfig();
   } else {
     errEl.style.display = 'block';
     document.getElementById('loginPass').value = '';
     document.getElementById('loginPass').focus();
-    // shake animation
     const card = document.querySelector('.login-card');
     card.style.animation = 'shake 0.3s ease';
     setTimeout(() => card.style.animation = '', 300);
@@ -1155,6 +1220,7 @@ function doLogin() {
 function doLogout() {
   if (!confirm('Sign out? You will need to enter the password again to access Flow Leads.')) return;
   localStorage.removeItem(AUTH_KEY);
+  localStorage.removeItem(ROLE_KEY);
   location.reload();
 }
 
@@ -1297,6 +1363,7 @@ async function init() {
 }
 
 async function initAndLoad() {
+  applyRole();
   const cfg = loadConfig();
   initSupabase(cfg.url, cfg.key);
   setSyncStatus('loading', 'loading…');
@@ -1389,17 +1456,17 @@ async function saveLeadToSupabase(data, editId) {
     stage: data.stage,
     priority: data.priority,
     fu_date: data.fuD || null,
-    fu_required: data.fuR,
+    fu_required: data.fuR ?? false,
     soft: data.soft || null,
     del: data.del || null,
-    del_mode: data.delMode,
+    del_mode: data.delMode || 'none',
     notes: data.notes || null,
     last_contact: data.lc || null,
-    outreach_em: data.em,
-    outreach_wa: data.wa,
-    outreach_vb: data.vb,
-    outreach_cl: data.cl,
-    outreach_ip: data.ip,
+    outreach_em: !!data.em,
+    outreach_wa: !!data.wa,
+    outreach_vb: !!data.vb,
+    outreach_cl: !!data.cl,
+    outreach_ip: !!data.ip,
   };
   // Attempt to include onboarding_data; fall back silently if column doesn't exist yet
   const rowWithOb = data.onboarding
@@ -1421,9 +1488,10 @@ async function saveLeadToSupabase(data, editId) {
         `${e} <b>Stage Updated</b>\n<b>${row.deal}</b>\n${prevLead.stage} → <b>${row.stage}</b>`);
     }
   } else {
-    let res = await sb.from('leads').insert(rowWithOb).select().single();
+    const rowIns = { ...rowWithOb, created_by: data.createdBy || currentUser?.name || null };
+    let res = await sb.from('leads').insert(rowIns).select().single();
     if (res.error && res.error.message && res.error.message.includes('onboarding_data')) {
-      res = await sb.from('leads').insert(row).select().single();
+      res = await sb.from('leads').insert({ ...row, created_by: rowIns.created_by }).select().single();
     }
     if (res.error) { setSyncStatus('err', 'save failed'); toast('⚠ Save failed: ' + res.error.message); return false; }
     leadId = res.data.id;
@@ -1475,10 +1543,10 @@ async function updateTicketStatusSupabase(tickId, status) {
 }
 
 // ── INTERACTION LOG ──────────────────────────────────────────
-async function saveInteractionToSupabase(leadId, type, text) {
-  const { error } = await sb.from('interactions').insert({
-    lead_id: leadId, type, text,
-  });
+async function saveInteractionToSupabase(leadId, type, text, date = null) {
+  const payload = { lead_id: leadId, type, text };
+  if (date) payload.created_at = date;
+  const { error } = await sb.from('interactions').insert(payload);
   if (error) { toast('⚠ Log failed'); return false; }
   // Update last_contact
   await sb.from('leads').update({ last_contact: todayS() }).eq('id', leadId);
@@ -1487,6 +1555,11 @@ async function saveInteractionToSupabase(leadId, type, text) {
 
 async function deleteInteractionFromSupabase(entryId) {
   await sb.from('interactions').delete().eq('id', entryId);
+}
+
+async function updateInteractionInSupabase(entryId, text) {
+  const { error } = await sb.from('interactions').update({ text }).eq('id', entryId);
+  return !error;
 }
 
 // ── REALTIME ─────────────────────────────────────────────────
@@ -2341,6 +2414,7 @@ function renderStats(){
 
 /* ── VIEW MODE ── */
 let currentView = 'leads';
+let leadsLayout = 'grid'; // 'grid' | 'list'
 let bulkMode = false;
 let bulkSelected = new Set();
 let tvFilters = { status: '', type: '', search: '' };
@@ -2351,17 +2425,24 @@ function setView(view) {
   document.querySelectorAll('.view-tab').forEach(el => el.classList.toggle('active', el.dataset.view === view));
   const leadsArea = document.getElementById('leadsArea');
   const ticketsArea = document.getElementById('ticketsArea');
-  const leadsFilters = document.querySelectorAll('#qS,#qSt,#qFu,#qPr,#leadsSearchBox,#newLeadBtn,#bulkSelectBtn');
+  document.getElementById('activityArea').style.display = 'none';
+  const leadsFilters = document.querySelectorAll('#qS,#qSt,#qFu,#qPr,#leadsSearchBox,#newLeadBtn,#bulkSelectBtn,#layoutBtn');
   if (view === 'leads') {
     leadsArea.style.display = '';
     ticketsArea.style.display = 'none';
     leadsFilters.forEach(el => el && (el.style.display = ''));
     renderAll();
-  } else {
+  } else if (view === 'tickets') {
     leadsArea.style.display = 'none';
     ticketsArea.style.display = '';
     leadsFilters.forEach(el => el && (el.style.display = 'none'));
     renderAllTickets();
+  } else if (view === 'activity') {
+    leadsArea.style.display = 'none';
+    ticketsArea.style.display = 'none';
+    document.getElementById('activityArea').style.display = '';
+    leadsFilters.forEach(el => el && (el.style.display = 'none'));
+    renderActivity();
   }
 }
 
@@ -2399,7 +2480,8 @@ function renderAllTickets() {
   }
   container.innerHTML = filtered.map(t => {
     const dd = t.date ? diffD(t.date) : null;
-    const dateClr = dd !== null && dd < 0 ? 'var(--danger)' : dd === 0 ? 'var(--warn)' : 'var(--t2)';
+    const tDone = t.status==='completed'||t.status==='cancelled';
+    const dateClr = !tDone&&dd!==null&&dd<0 ? 'var(--danger)' : !tDone&&dd===0 ? 'var(--warn)' : 'var(--t2)';
     return `<div class="tv-ticket">
       <span style="font-size:18px;flex-shrink:0;margin-top:1px">${tIcon[t.type]||'◎'}</span>
       <div style="flex:1;min-width:0">
@@ -2408,7 +2490,7 @@ function renderAllTickets() {
           <span class="ts-badge ${tsClass[t.status]||'ts-pending'}" style="cursor:pointer" onclick="cycleTicketStatusGlobal('${t._lead.id}','${t.id}')">${tsLabel[t.status]||'Pending'}</span>
         </div>
         <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:10.5px">
-          <span style="color:var(--accent);cursor:pointer;font-weight:500" onclick="openDrawer('${t._lead.id}','tickets')">${esc(t._lead.deal)}</span>
+          <span style="color:var(--accent);cursor:pointer;font-weight:500" onclick="navigateToLead('${t._lead.id}')">${esc(t._lead.deal)}</span>
           ${t.date?`<span style="color:${dateClr}">${fmtDT(t.date,t.time)}</span>`:''}
           ${t.assigned?`<span style="color:var(--t3)">→ ${esc(t.assigned)}</span>`:''}
           ${t.notes?`<span style="color:var(--t3);font-style:italic;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(t.notes)}</span>`:''}
@@ -2445,6 +2527,32 @@ function renderAll(){
   const grid=document.getElementById('leadsGrid'),empty=document.getElementById('emptyState');
   if(!list.length){grid.innerHTML='';empty.style.display='block';renderStats();checkReminders();return}
   empty.style.display='none';
+  // List view
+  if (leadsLayout === 'list') {
+    grid.className = 'grid list-view-wrap';
+    grid.innerHTML = `<table class="leads-table"><thead><tr>
+      <th>Business</th><th>Category</th><th>Stage</th><th>Priority</th><th>Follow-up</th><th>Last Contact</th><th></th>
+    </tr></thead><tbody>` + list.map(l => {
+      const dd=diffD(l.fuD),isOv=l.fuR&&dd!==null&&dd<0,isTd=l.fuR&&dd===0;
+      const fuTxt=l.fuR&&l.fuD?(isOv?`<span style="color:var(--danger)">⚠ ${fmtD(l.fuD)}</span>`:isTd?`<span style="color:var(--warn)">Today</span>`:`<span style="color:var(--t2)">${fmtD(l.fuD)}</span>`):'—';
+      const priColor=l.priority==='High'?'var(--accent)':l.priority==='Low'?'var(--t3)':'var(--t2)';
+      return `<tr>
+        <td><div class="lt-deal">${esc(l.deal||'Unnamed')}</div>${(l.contacts||[])[0]?.name?`<div class="lt-sub">${esc(l.contacts[0].name)}</div>`:''}</td>
+        <td style="color:var(--t2)">${esc(l.type||'—')}</td>
+        <td><span class="sbadge ${scls(l.stage)}">${esc(l.stage)}</span></td>
+        <td style="color:${priColor};font-size:11px;font-weight:500">${esc(l.priority)}</td>
+        <td>${fuTxt}</td>
+        <td style="color:var(--t3)">${l.lc?fmtD(l.lc):'—'}</td>
+        <td><div class="lt-acts">
+          <button class="ib ed" onclick="openLeadModal('${l.id}')" title="Edit"><span class="ib-tip">Edit</span>✎</button>
+          <button class="ib" onclick="openDrawer('${l.id}','tickets')" title="Tickets &amp; Log"><span class="ib-tip">Tickets &amp; Log</span>🎫</button>
+          <button class="ib del admin-only" onclick="delLead('${l.id}')" title="Delete"><span class="ib-tip">Delete</span>✕</button>
+        </div></td>
+      </tr>`;
+    }).join('') + '</tbody></table>';
+    renderStats();checkReminders();return;
+  }
+  grid.className = 'grid';
 
   grid.innerHTML=list.map(l=>{
     const dd=diffD(l.fuD),isOv=l.fuR&&dd!==null&&dd<0,isTd=l.fuR&&dd===0;
@@ -2490,7 +2598,7 @@ function renderAll(){
             <button class="ib wa" onclick="openWa('${l.id}')" title="WhatsApp"><span class="ib-tip">WhatsApp</span>💬</button>
             <button class="ib em" onclick="openEm('${l.id}')" title="Email"><span class="ib-tip">Email</span>✉</button>
             <button class="ib ed" onclick="openLeadModal('${l.id}')" title="Edit"><span class="ib-tip">Edit</span>✎</button>
-            <button class="ib del" onclick="delLead('${l.id}')" title="Delete"><span class="ib-tip">Delete</span>✕</button>
+            <button class="ib del admin-only" onclick="delLead('${l.id}')" title="Delete"><span class="ib-tip">Delete</span>✕</button>
           </div>
         </div>
         <div class="cbody">
@@ -2705,25 +2813,42 @@ function renderDrawerTickets() {
   wrap.innerHTML = l.tickets.map(t => {
     const tPriDot = t.priority==='high' ? '<span style="color:var(--accent);font-size:9px;margin-right:3px">●</span>' : t.priority==='low' ? '<span style="color:var(--t3);font-size:9px;margin-right:3px">●</span>' : '';
     const dd = t.date ? diffD(t.date) : null;
-    const dateColor = dd!==null&&dd<0 ? 'color:var(--danger)' : dd===0 ? 'color:var(--warn)' : '';
-    return `<div class="ticket">
+    const tDone = t.status==='completed'||t.status==='cancelled';
+    const dateColor = !tDone&&dd!==null&&dd<0 ? 'color:var(--danger)' : !tDone&&dd===0 ? 'color:var(--warn)' : '';
+    const isExp = drawerTicketExpanded === t.id;
+    const expandBody = isExp ? `
+      <div class="ticket-inline-edit" onclick="event.stopPropagation()">
+        <div class="frow" style="gap:6px;margin-bottom:6px">
+          <div class="fg"><label class="flbl" style="font-size:10px">Title</label><input type="text" id="tie-title-${t.id}" value="${esc(t.title||'')}" style="font-size:12px"></div>
+          <div class="fg"><label class="flbl" style="font-size:10px">Assigned</label><input type="text" id="tie-assigned-${t.id}" value="${esc(t.assigned||'')}" style="font-size:12px"></div>
+        </div>
+        <div class="frow" style="gap:6px;margin-bottom:6px">
+          <div class="fg"><label class="flbl" style="font-size:10px">Date</label><input type="date" id="tie-date-${t.id}" value="${t.date||''}" style="font-size:12px"></div>
+          <div class="fg"><label class="flbl" style="font-size:10px">Time</label><input type="time" id="tie-time-${t.id}" value="${t.time||''}" style="font-size:12px"></div>
+        </div>
+        <div class="fg" style="margin-bottom:6px"><label class="flbl" style="font-size:10px">Notes</label><textarea id="tie-notes-${t.id}" style="min-height:44px;font-size:12px">${esc(t.notes||'')}</textarea></div>
+        <div style="display:flex;gap:6px">
+          <button class="btn primary" style="padding:4px 12px;font-size:11px" onclick="saveTicketInlineEdit('${t.id}')">Save</button>
+          <button class="btn ghost" style="padding:4px 12px;font-size:11px" onclick="drawerTicketExpanded=null;renderDrawerTickets()">Cancel</button>
+        </div>
+      </div>` : `<div class="ticket-body">
+        ${t.date?`<div class="ticket-row"><span class="ticket-lbl">Date</span><span class="ticket-val" style="${dateColor}">${fmtDT(t.date,t.time)}</span></div>`:''}
+        ${t.assigned?`<div class="ticket-row"><span class="ticket-lbl">Assigned</span><span class="ticket-val">${esc(t.assigned)}</span></div>`:''}
+        ${t.notes?`<div class="ticket-note">${esc(t.notes)}</div>`:''}
+      </div>`;
+    return `<div class="ticket${isExp?' expanded':''}" onclick="toggleTicketExpand('${t.id}')">
       <div class="ticket-top">
         <div class="ticket-left">
           <span class="ticket-icon">${tIcon[t.type]||'◎'}</span>
           <span class="ticket-title">${tPriDot}${esc(t.title||(t.type.charAt(0).toUpperCase()+t.type.slice(1)))}</span>
         </div>
-        <div class="ticket-acts">
-          <span class="ts-badge ${tsClass[t.status]||'ts-pending'}" onclick="cycleTicketStatusDrawer('${t.id}')" title="Click to cycle">${tsLabel[t.status]||'Pending'}</span>
+        <div class="ticket-acts" onclick="event.stopPropagation()">
+          <span class="ts-badge ${tsClass[t.status]||'ts-pending'}" onclick="cycleTicketStatusDrawer('${t.id}')" title="Click to cycle status">${tsLabel[t.status]||'Pending'}</span>
           ${t.date?`<button class="ib" onclick="addToGcal('${drawerLeadId}','${t.id}')" title="Add to Google Calendar"><span class="ib-tip">Add to Calendar</span>📅</button>`:''}
-          <button class="ib ed" onclick="editTicketFromDrawer('${t.id}')" title="Edit"><span class="ib-tip">Edit</span>✎</button>
-          <button class="ib del" onclick="delTicketFromDrawer('${t.id}')" title="Delete"><span class="ib-tip">Delete</span>&#x2715;</button>
+          <button class="ib del admin-only" onclick="delTicketFromDrawer('${t.id}')" title="Delete"><span class="ib-tip">Delete</span>&#x2715;</button>
         </div>
       </div>
-      <div class="ticket-body">
-        ${t.date?`<div class="ticket-row"><span class="ticket-lbl">Date</span><span class="ticket-val" style="${dateColor}">${fmtDT(t.date,t.time)}</span></div>`:''}
-        ${t.assigned?`<div class="ticket-row"><span class="ticket-lbl">Assigned</span><span class="ticket-val">${esc(t.assigned)}</span></div>`:''}
-        ${t.notes?`<div class="ticket-note">${esc(t.notes)}</div>`:''}
-      </div>
+      ${expandBody}
     </div>`;
   }).join('');
 }
@@ -2789,33 +2914,84 @@ function addToGcal(leadId, tickId) {
 /* ── LOG in drawer ── */
 const LOG_TYPES = ['note','call','email','whatsapp','meeting','visit','other'];
 const LT_LABEL  = {note:'Note',call:'Call',email:'Email',whatsapp:'WhatsApp',meeting:'Meeting',visit:'Visit',other:'Other'};
+let logFilter = '';
+let logDatePreset = 'today';
+let drawerTicketExpanded = null; // 'today' | 'yesterday' | 'custom'
+let logCustomDateVal = '';
+let editingLogId = null;
+
+function setLogFilter(type) {
+  logFilter = type;
+  document.querySelectorAll('#logFilterBar .log-type-opt').forEach(e => e.classList.toggle('sel', e.dataset.filter === type));
+  renderDrawerLog();
+}
+
+function setLogDate(preset) {
+  logDatePreset = preset;
+  document.querySelectorAll('#logDateRow .log-type-opt').forEach(e => e.classList.toggle('sel', e.dataset.ld === preset));
+  const customInp = document.getElementById('logCustomDate');
+  if (customInp) customInp.style.display = preset === 'custom' ? 'block' : 'none';
+}
+
+function onLogCustomDate() {
+  logCustomDateVal = document.getElementById('logCustomDate').value;
+}
+
+function getLogDate() {
+  if (logDatePreset === 'yesterday') {
+    const d = new Date(); d.setDate(d.getDate() - 1);
+    return d.toISOString().split('T')[0] + 'T12:00:00.000Z';
+  }
+  if (logDatePreset === 'custom' && logCustomDateVal) {
+    return logCustomDateVal + 'T12:00:00.000Z';
+  }
+  return null; // today = server default
+}
 
 function renderDrawerLog() {
   const l = leads.find(x => x.id === drawerLeadId);
-  const entries = l?.log || [];
+  let entries = l?.log || [];
   const wrap = document.getElementById('drawerLogEntries');
   const typeRow = document.getElementById('drawerLogTypeRow');
 
-  // Type pills
   typeRow.innerHTML = LOG_TYPES.map(t =>
     `<div class="log-type-opt${t==='note'?' sel':''}" data-type="${t}" onclick="setDrawerLogType('${t}')">${LT_LABEL[t]}</div>`
   ).join('');
 
+  if (logFilter) entries = entries.filter(e => e.type === logFilter);
+
   if (!entries.length) {
-    wrap.innerHTML = '<div class="drawer-empty"><div class="drawer-empty-ico">📝</div><span>No interactions logged yet.<br>Add your first note below.</span></div>';
+    wrap.innerHTML = '<div class="drawer-empty"><div class="drawer-empty-ico">📝</div><span>No interactions logged yet.</span></div>';
     return;
   }
   wrap.innerHTML = entries.map(e => {
     const d = new Date(e.date);
     const dateStr = d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
     const timeStr = d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+    const isEditing = editingLogId === e.id;
+    if (isEditing) {
+      return `<div class="log-entry editing">
+        <div class="log-entry-head">
+          <span class="log-type-tag lt-${e.type||'note'}">${LT_LABEL[e.type]||'Note'}</span>
+          <span class="log-date">${dateStr}</span>
+        </div>
+        <textarea id="log-edit-ta-${e.id}" style="width:100%;min-height:52px;font-size:12px;resize:vertical;margin:4px 0;padding:6px 8px;border:1px solid var(--accent);border-radius:6px;background:var(--s2);color:var(--t1)">${esc(e.text)}</textarea>
+        <div style="display:flex;gap:6px;margin-top:4px">
+          <button class="btn primary" style="padding:3px 10px;font-size:11px" onclick="saveDrawerLogEdit('${e.id}')">Save</button>
+          <button class="btn ghost" style="padding:3px 10px;font-size:11px" onclick="cancelLogEdit()">Cancel</button>
+        </div>
+      </div>`;
+    }
     return `<div class="log-entry">
       <div class="log-entry-head">
         <span class="log-type-tag lt-${e.type||'note'}">${LT_LABEL[e.type]||'Note'}</span>
         <span class="log-date">${dateStr} · ${timeStr}</span>
+        <div style="margin-left:auto;display:flex;gap:4px">
+          <button class="log-del" style="color:var(--t3)" onclick="startLogEdit('${e.id}')" title="Edit">✎</button>
+          <button class="log-del admin-only" onclick="deleteDrawerLog('${e.id}')" title="Delete">✕</button>
+        </div>
       </div>
       <div class="log-text">${esc(e.text)}</div>
-      <button class="log-del" onclick="deleteDrawerLog('${e.id}')" title="Delete">✕</button>
     </div>`;
   }).join('');
 }
@@ -2839,11 +3015,12 @@ function submitDrawerLog() {
   if (!l) return;
   if (!l.log) l.log = [];
   const logType = getDrawerLogType();
+  const logDate = getLogDate();
   ta.value = '';
-  saveInteractionToSupabase(drawerLeadId, logType, text).then(ok => {
+  saveInteractionToSupabase(drawerLeadId, logType, text, logDate).then(ok => {
     if (!ok) return;
     if (!l.log) l.log = [];
-    l.log.unshift({ id: uid(), type: logType, text, date: new Date().toISOString() });
+    l.log.unshift({ id: uid(), type: logType, text, date: logDate || new Date().toISOString() });
     l.lc = todayS();
     if (['call','meeting','visit'].includes(logType)) {
       const ltLabel = {call:'Call',meeting:'Meeting',visit:'Visit'};
@@ -2852,6 +3029,56 @@ function submitDrawerLog() {
     renderDrawerLog();
     updateDrawerCounts();
     renderAll();
+  });
+}
+
+function toggleTicketExpand(tickId) {
+  drawerTicketExpanded = drawerTicketExpanded === tickId ? null : tickId;
+  renderDrawerTickets();
+}
+
+async function saveTicketInlineEdit(tickId) {
+  const l = leads.find(x => x.id === drawerLeadId);
+  if (!l) return;
+  const t = (l.tickets||[]).find(x => x.id === tickId);
+  if (!t) return;
+  t.title    = document.getElementById('tie-title-'    + tickId)?.value.trim() || t.title;
+  t.assigned = document.getElementById('tie-assigned-' + tickId)?.value.trim() || '';
+  t.date     = document.getElementById('tie-date-'     + tickId)?.value || '';
+  t.time     = document.getElementById('tie-time-'     + tickId)?.value || '';
+  t.notes    = document.getElementById('tie-notes-'    + tickId)?.value.trim() || '';
+  const ok = await saveTicketToSupabase(drawerLeadId, tickId, t);
+  if (ok) { drawerTicketExpanded = null; renderDrawerTickets(); renderAll(); toast('✓ Ticket updated'); }
+}
+
+function navigateToLead(leadId) {
+  setView('leads');
+  setTimeout(() => openDrawer(leadId, 'tickets'), 150);
+}
+
+function startLogEdit(entryId) {
+  editingLogId = entryId;
+  renderDrawerLog();
+  setTimeout(() => document.getElementById('log-edit-ta-' + entryId)?.focus(), 50);
+}
+
+function cancelLogEdit() {
+  editingLogId = null;
+  renderDrawerLog();
+}
+
+function saveDrawerLogEdit(entryId) {
+  const ta = document.getElementById('log-edit-ta-' + entryId);
+  const text = ta?.value.trim();
+  if (!text) return;
+  const l = leads.find(x => x.id === drawerLeadId);
+  if (!l) return;
+  updateInteractionInSupabase(entryId, text).then(ok => {
+    if (!ok) { toast('⚠ Edit failed'); return; }
+    const entry = (l.log || []).find(e => e.id === entryId);
+    if (entry) entry.text = text;
+    editingLogId = null;
+    renderDrawerLog();
   });
 }
 
@@ -3209,6 +3436,56 @@ async function confirmImport() {
   toast(msg);
 }
 
+function toggleLeadsLayout() {
+  leadsLayout = leadsLayout === 'grid' ? 'list' : 'grid';
+  const btn = document.getElementById('layoutBtn');
+  if (btn) btn.textContent = leadsLayout === 'grid' ? '☰' : '⊞';
+  renderAll();
+}
+
+let activityFilter = '';
+
+function setActivityFilter(type) {
+  activityFilter = type;
+  document.querySelectorAll('#activityFilterRow .log-type-opt').forEach(e => e.classList.toggle('sel', e.dataset.af === type));
+  renderActivity();
+}
+
+function renderActivity() {
+  const search = (document.getElementById('actSearch')?.value || '').toLowerCase();
+  let all = [];
+  leads.forEach(l => {
+    (l.log || []).forEach(e => all.push({ ...e, leadDeal: l.deal, leadId: l.id }));
+  });
+  all.sort((a, b) => new Date(b.date) - new Date(a.date));
+  if (activityFilter) all = all.filter(e => e.type === activityFilter);
+  if (search) all = all.filter(e =>
+    (e.leadDeal || '').toLowerCase().includes(search) ||
+    (e.text || '').toLowerCase().includes(search)
+  );
+  const container = document.getElementById('activityGrid');
+  if (!container) return;
+  if (!all.length) {
+    container.innerHTML = '<div style="padding:40px 0;text-align:center;color:var(--t3);font-size:12px">No activity found</div>';
+    return;
+  }
+  container.innerHTML = all.map(e => {
+    const d = new Date(e.date);
+    const dateStr = d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+    const timeStr = d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+    return `<div style="background:var(--s1);border:1px solid var(--b1);border-radius:10px;padding:10px 14px;display:flex;gap:12px;align-items:flex-start">
+      <span class="log-type-tag lt-${e.type||'note'}" style="flex-shrink:0;margin-top:1px">${LT_LABEL[e.type]||'Note'}</span>
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:3px">
+          <span style="font-size:12px;font-weight:600;color:var(--accent);cursor:pointer" onclick="navigateToLead('${e.leadId}')">${esc(e.leadDeal)}</span>
+          <span style="font-size:10.5px;color:var(--t3)">${dateStr} · ${timeStr}</span>
+        </div>
+        <div style="font-size:12px;color:var(--t1);line-height:1.5">${esc(e.text)}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
 function setInitLogType(type) {
   document.querySelectorAll('#initLogTypeRow .log-type-opt').forEach(e => e.classList.toggle('sel', e.dataset.type === type));
 }
@@ -3480,7 +3757,7 @@ function updateTicketDateDisplay() {
   </div>
   <button class="btn primary" id="bulkApplyBtn" onclick="applyBulkUpdate()">Apply</button>
   <div class="bulk-sep"></div>
-  <button class="btn ghost" onclick="bulkDelete()" style="color:var(--danger);border-color:rgba(220,79,79,0.25)">🗑 Delete</button>
+  <button class="btn ghost admin-only" onclick="bulkDelete()" style="color:var(--danger);border-color:rgba(220,79,79,0.25)">🗑 Delete</button>
   <button class="btn ghost" onclick="exitBulkMode()" style="margin-left:auto">✕ Cancel</button>
 </div>
 </body>
