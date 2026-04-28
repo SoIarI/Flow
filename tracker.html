@@ -544,6 +544,33 @@ body.rep-mode .admin-only{display:none!important}
 .lt-detail-body .ltd-lbl{font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:0.05em}
 .lt-detail-body .ltd-val{color:var(--t2)}
 #layoutBtn{font-size:13px;padding:0 10px;min-width:36px}
+/* Sortable column headers */
+.leads-table th.sortable{cursor:pointer;user-select:none}
+.leads-table th.sortable:hover{color:var(--t2)}
+.sort-arrow{margin-left:3px;font-size:9px;opacity:0.35}
+.leads-table th.sort-asc .sort-arrow,.leads-table th.sort-desc .sort-arrow{opacity:1;color:var(--accent)}
+/* Column picker */
+.col-picker{position:relative;display:inline-flex}
+.col-picker-drop{position:absolute;top:calc(100% + 4px);left:0;min-width:172px;background:var(--s1);border:1px solid var(--b2);border-radius:var(--r);padding:6px 0;z-index:310;box-shadow:0 4px 16px rgba(0,0,0,0.10)}
+.col-picker-drop label{display:flex;align-items:center;gap:8px;padding:7px 14px;font-size:11.5px;color:var(--t2);cursor:pointer;white-space:nowrap}
+.col-picker-drop label:hover{background:var(--s2)}
+.col-picker-drop input[type=checkbox]{accent-color:var(--accent);width:13px;height:13px;flex-shrink:0}
+/* Analytics view */
+.analytics-wrap{padding:4px 0 24px}
+.analytics-kpi-row{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:20px}
+.analytics-kpi{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:14px 18px;min-width:130px;flex:1}
+.analytics-kpi .ak-val{font-size:26px;font-weight:700;color:var(--accent);font-family:'Syne',sans-serif;line-height:1}
+.analytics-kpi .ak-lbl{font-size:10.5px;color:var(--t3);margin-top:5px}
+.analytics-table{width:100%;border-collapse:collapse;font-size:12px}
+.analytics-table th{text-align:left;padding:9px 12px;font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:0.05em;border-bottom:2px solid var(--b2);white-space:nowrap;background:var(--s2);position:sticky;top:0}
+.analytics-table td{padding:9px 12px;border-bottom:1px solid var(--b1);color:var(--t1)}
+.analytics-table tr:hover td{background:var(--s2)}
+.analytics-table .at-name{font-weight:600}
+.analytics-table .at-total{font-weight:700;color:var(--accent)}
+.analytics-bar-wrap{height:6px;background:var(--s3);border-radius:3px;min-width:60px;flex:1}
+.analytics-bar{height:6px;background:var(--accent);border-radius:3px;transition:width 0.3s}
+/* Print styles for analytics */
+@media print{body>*{display:none!important}#analyticsArea{display:block!important;position:static!important}#analyticsArea .no-print{display:none!important}}
 
 /* ── BULK SELECT ── */
 .card-cb{position:absolute;top:11px;left:11px;width:16px;height:16px;accent-color:var(--accent);cursor:pointer;z-index:5;display:none;border-radius:3px}
@@ -701,11 +728,16 @@ body.rep-mode .admin-only{display:none!important}
     <button class="view-tab active" data-view="leads" onclick="setView('leads')">Leads</button>
     <button class="view-tab" data-view="tickets" onclick="setView('tickets')">Tickets</button>
     <button class="view-tab admin-only" data-view="activity" onclick="setView('activity')">Activity</button>
+    <button class="view-tab admin-only" data-view="analytics" onclick="setView('analytics')">Analytics</button>
   </div>
   <div class="tsep"></div>
   <button class="btn primary" id="newLeadBtn" onclick="openLeadModal()">＋ New Lead</button>
   <button class="btn ghost" id="bulkSelectBtn" onclick="toggleBulkMode()" title="Select leads to bulk-update">☑ Select</button>
   <button class="btn ghost" id="layoutBtn" onclick="toggleLeadsLayout()" title="Switch between grid and list view">☰</button>
+  <div class="col-picker" id="colPickerWrap" style="display:none">
+    <button class="btn ghost" id="colPickerBtn" onclick="toggleColPicker()" title="Show/hide columns">⊟ Columns</button>
+    <div class="col-picker-drop" id="colPickerDrop" style="display:none"></div>
+  </div>
   <div class="tsep"></div>
   <div class="sbox" id="leadsSearchBox"><input type="text" id="qS" placeholder="Search leads…" oninput="renderAll()"></div>
   <select class="sel" id="qSt" onchange="renderAll()">
@@ -721,6 +753,13 @@ body.rep-mode .admin-only{display:none!important}
   <select class="sel" id="qPr" onchange="renderAll()">
     <option value="">All priorities</option>
     <option>High</option><option>Normal</option><option>Low</option>
+  </select>
+  <select class="sel" id="qSort" onchange="renderAll()" title="Sort order">
+    <option value="">Default order</option>
+    <option value="recent_contact">Recently Contacted</option>
+    <option value="recent_update">Recently Updated</option>
+    <option value="deal_asc">Name A–Z</option>
+    <option value="deal_desc">Name Z–A</option>
   </select>
   <div class="tsep"></div>
   <button class="btn ghost" onclick="exportCSV()">⬇ Export</button>
@@ -765,6 +804,10 @@ body.rep-mode .admin-only{display:none!important}
     </div>
     <div id="ticketsGrid" style="display:flex;flex-direction:column;gap:6px"></div>
   </div>
+</div>
+
+<div id="analyticsArea" style="display:none;padding:16px 20px">
+  <div id="analyticsContent"></div>
 </div>
 
 <div id="activityArea" style="display:none;padding:16px 20px">
@@ -844,6 +887,9 @@ body.rep-mode .admin-only{display:none!important}
       </div>
       <div class="fg"><label class="flbl">Priority</label>
         <select id="f_pri"><option>Normal</option><option>High</option><option>Low</option></select>
+      </div>
+      <div class="fg"><label class="flbl">Assigned To</label>
+        <input type="text" id="f_assigned" placeholder="Team member name">
       </div>
     </div>
 
@@ -1621,8 +1667,9 @@ function mapLead(l, contacts, tickets, log) {
       date: t.date||'', time: t.time||'', assigned: t.assigned_to||'',
       priority: t.priority||'normal', notes: t.notes||''
     })),
+    assigned: l.assigned_to || '',
     log: log.map(i => ({
-      id: i.id, type: i.type, text: i.text, date: i.created_at
+      id: i.id, type: i.type, text: i.text, date: i.created_at, by: i.created_by || ''
     })),
     onboarding: l.onboarding_data ? (() => { try { return JSON.parse(l.onboarding_data); } catch { return {}; } })() : {},
   };
@@ -1651,19 +1698,22 @@ async function saveLeadToSupabase(data, editId) {
     outreach_cl: !!data.cl,
     outreach_ip: !!data.ip,
   };
-  // Attempt to include onboarding_data; fall back silently if column doesn't exist yet
+  // Attempt to include onboarding_data and assigned_to; fall back silently if columns don't exist
   const rowWithOb = data.onboarding
     ? { ...row, onboarding_data: JSON.stringify(data.onboarding) }
     : row;
+  const rowFull = { ...rowWithOb, assigned_to: data.assigned || null };
   let leadId = editId;
+  const tryUpdate = async (payload) => {
+    let res = await sb.from('leads').update(payload).eq('id', editId);
+    if (res.error?.message?.includes('onboarding_data')) res = await sb.from('leads').update({ ...row, assigned_to: payload.assigned_to }).eq('id', editId);
+    if (res.error?.message?.includes('assigned_to')) res = await sb.from('leads').update(row).eq('id', editId);
+    return res;
+  };
   if (editId) {
     const prevLead = leads.find(x => x.id === editId);
-    let res = await sb.from('leads').update(rowWithOb).eq('id', editId);
-    if (res.error && res.error.message && res.error.message.includes('onboarding_data')) {
-      res = await sb.from('leads').update(row).eq('id', editId);
-    }
+    const res = await tryUpdate(rowFull);
     if (res.error) { setSyncStatus('err', 'save failed'); toast('⚠ Save failed: ' + res.error.message); return false; }
-    // Stage change notification
     if (prevLead && prevLead.stage !== row.stage) {
       const stageEmoji = {'New':'🆕','Contacted':'📞','Interested':'👀','Meeting Set':'📅','Negotiating':'🤝','Closed':'✅','Lost':'❌','No Response':'🔇','On Hold':'⏸'};
       const e = stageEmoji[row.stage] || '◎';
@@ -1671,10 +1721,16 @@ async function saveLeadToSupabase(data, editId) {
         `${e} <b>Stage Updated</b>\n<b>${row.deal}</b>\n${prevLead.stage} → <b>${row.stage}</b>`);
     }
   } else {
-    const rowIns = { ...rowWithOb, created_by: data.createdBy || currentUser?.name || null };
+    const rowIns = { ...rowFull, created_by: data.createdBy || currentUser?.name || null };
     let res = await sb.from('leads').insert(rowIns).select().single();
-    if (res.error && res.error.message && res.error.message.includes('onboarding_data')) {
-      res = await sb.from('leads').insert({ ...row, created_by: rowIns.created_by }).select().single();
+    if (res.error?.message) {
+      // Retry stripping unknown columns one at a time
+      const stripped = { ...row, created_by: rowIns.created_by };
+      if (!res.error.message.includes('assigned_to')) stripped.assigned_to = rowIns.assigned_to;
+      if (!res.error.message.includes('created_by')) stripped.created_by = rowIns.created_by;
+      if (!res.error.message.includes('onboarding_data')) stripped.onboarding_data = rowFull.onboarding_data;
+      res = await sb.from('leads').insert(stripped).select().single();
+      if (res.error?.message) res = await sb.from('leads').insert(row).select().single();
     }
     if (res.error) { setSyncStatus('err', 'save failed'); toast('⚠ Save failed: ' + res.error.message); return false; }
     leadId = res.data.id;
@@ -1727,11 +1783,15 @@ async function updateTicketStatusSupabase(tickId, status) {
 
 // ── INTERACTION LOG ──────────────────────────────────────────
 async function saveInteractionToSupabase(leadId, type, text, date = null) {
-  const payload = { lead_id: leadId, type, text };
+  const payload = { lead_id: leadId, type, text, created_by: currentUser?.name || null };
   if (date) payload.created_at = date;
-  const { error } = await sb.from('interactions').insert(payload);
+  let { error } = await sb.from('interactions').insert(payload);
+  if (error?.message?.includes('created_by')) {
+    const p2 = { lead_id: leadId, type, text };
+    if (date) p2.created_at = date;
+    ({ error } = await sb.from('interactions').insert(p2));
+  }
   if (error) { toast('⚠ Log failed'); return false; }
-  // Update last_contact
   await sb.from('leads').update({ last_contact: todayS() }).eq('id', leadId);
   return true;
 }
@@ -2124,6 +2184,7 @@ function openLeadModal(id=null){
     sf.forEach(f=>{const e=document.getElementById('f_'+f);if(e)e.value=l[f]||''});
     document.getElementById('f_stage').value=l.stage||'New';
     document.getElementById('f_pri').value=l.priority||'Normal';
+    const fAssigned=document.getElementById('f_assigned');if(fAssigned)fAssigned.value=l.assigned||'';
     ch.forEach(f=>{const e=document.getElementById('f_'+f);if(e)e.checked=!!l[f]});
     ctcs=JSON.parse(JSON.stringify(l.contacts||[]));
     loadFuState(l);loadDelMode(l.delMode);loadLocState(l.loc);loadTypeState(l.type);
@@ -2133,6 +2194,7 @@ function openLeadModal(id=null){
   }else{
     sf.forEach(f=>{const e=document.getElementById('f_'+f);if(e)e.value=''});
     document.getElementById('f_stage').value='New';document.getElementById('f_pri').value='Normal';
+    const fAssigned2=document.getElementById('f_assigned');if(fAssigned2)fAssigned2.value=currentUser?.name||'';
     ch.forEach(f=>{const e=document.getElementById('f_'+f);if(e)e.checked=false});
     document.getElementById('f_lc').value=todayS();
     ctcs=[];selectedLocs=[];resetFuState();loadDelMode('none');loadLocState('');loadTypeState('');
@@ -2165,6 +2227,7 @@ function saveLead(){
     delMode:document.getElementById('f_delMode').value||'none',
     notes:editId?(leads.find(x=>x.id===editId)?.notes||''):'',
     lc:document.getElementById('f_lc').value,
+    assigned:document.getElementById('f_assigned')?.value.trim()||'',
     em:document.getElementById('f_em').checked,
     wa:document.getElementById('f_wa').checked,
     vb:document.getElementById('f_vb').checked,
@@ -2250,7 +2313,8 @@ function openTicketModal(leadId,ticketId=null){
   }else{
     document.getElementById('t_type').value='meeting';
     document.getElementById('t_status').value='pending';
-    ['t_title','t_date','t_time','t_assigned','t_notes'].forEach(f=>document.getElementById(f).value='');
+    ['t_title','t_date','t_time','t_notes'].forEach(f=>document.getElementById(f).value='');
+    document.getElementById('t_assigned').value=currentUser?.name||'';
     document.getElementById('t_pri').value='normal';
     document.querySelectorAll('.tk-opt').forEach(e=>e.classList.remove('active'));
     document.getElementById('tkDateDisplay').textContent='';
@@ -2599,6 +2663,13 @@ function renderStats(){
 let currentView = 'leads';
 let leadsLayout = 'grid'; // 'grid' | 'list'
 let listRowExpanded = null;
+let listSortCol = '';
+let listSortDir = 'asc';
+let listColPickerOpen = false;
+const LIST_COLS_KEY = 'flow_list_cols';
+const LIST_COLS_ALL = ['deal','type','stage','priority','fuD','lc','assigned','loc','branches'];
+const LIST_COLS_LABELS = {deal:'Business',type:'Category',stage:'Stage',priority:'Priority',fuD:'Follow-up',lc:'Last Contact',assigned:'Assigned To',loc:'Locations',branches:'Branches'};
+let _scrollLockY = 0;
 let dealPage = 1, dealPageSize = 20;
 let ticketPage = 1, ticketPageSize = 20;
 let logPage = 1, logPageSize = 20;
@@ -2614,23 +2685,35 @@ function setView(view) {
   const leadsArea = document.getElementById('leadsArea');
   const ticketsArea = document.getElementById('ticketsArea');
   document.getElementById('activityArea').style.display = 'none';
-  const leadsFilters = document.querySelectorAll('#qS,#qSt,#qFu,#qPr,#leadsSearchBox,#newLeadBtn,#bulkSelectBtn,#layoutBtn');
+  document.getElementById('analyticsArea').style.display = 'none';
+  const leadsFilters = document.querySelectorAll('#qS,#qSt,#qFu,#qPr,#qSort,#leadsSearchBox,#newLeadBtn,#bulkSelectBtn,#layoutBtn');
+  const cpWrap = document.getElementById('colPickerWrap');
   if (view === 'leads') {
     leadsArea.style.display = '';
     ticketsArea.style.display = 'none';
     leadsFilters.forEach(el => el && (el.style.display = ''));
+    if (cpWrap) cpWrap.style.display = leadsLayout === 'list' ? 'inline-flex' : 'none';
     renderAll();
   } else if (view === 'tickets') {
     leadsArea.style.display = 'none';
     ticketsArea.style.display = '';
     leadsFilters.forEach(el => el && (el.style.display = 'none'));
+    if (cpWrap) cpWrap.style.display = 'none';
     renderAllTickets();
   } else if (view === 'activity') {
     leadsArea.style.display = 'none';
     ticketsArea.style.display = 'none';
     document.getElementById('activityArea').style.display = '';
     leadsFilters.forEach(el => el && (el.style.display = 'none'));
+    if (cpWrap) cpWrap.style.display = 'none';
     renderActivity();
+  } else if (view === 'analytics') {
+    leadsArea.style.display = 'none';
+    ticketsArea.style.display = 'none';
+    document.getElementById('analyticsArea').style.display = '';
+    leadsFilters.forEach(el => el && (el.style.display = 'none'));
+    if (cpWrap) cpWrap.style.display = 'none';
+    renderAnalytics();
   }
 }
 
@@ -2758,6 +2841,73 @@ async function deleteGlobalTicket(leadId, tickId) {
   renderAll();
 }
 
+/* ── SCROLL LOCK ── */
+function lockBodyScroll() {
+  _scrollLockY = window.scrollY;
+  document.body.style.top = `-${_scrollLockY}px`;
+  document.body.style.position = 'fixed';
+  document.body.style.width = '100%';
+}
+function unlockBodyScroll() {
+  const y = _scrollLockY;
+  document.body.style.position = '';
+  document.body.style.top = '';
+  document.body.style.width = '';
+  window.scrollTo(0, y);
+}
+
+/* ── COLUMN PICKER ── */
+function loadListCols() {
+  try {
+    const s = JSON.parse(localStorage.getItem(LIST_COLS_KEY) || 'null');
+    if (s) return s;
+  } catch {}
+  return { deal:true, type:true, stage:true, priority:true, fuD:true, lc:true, assigned:false, loc:false, branches:false };
+}
+function saveListCols(c) { localStorage.setItem(LIST_COLS_KEY, JSON.stringify(c)); }
+
+function toggleColPicker() {
+  listColPickerOpen = !listColPickerOpen;
+  const drop = document.getElementById('colPickerDrop');
+  if (!drop) return;
+  if (listColPickerOpen) {
+    const cols = loadListCols();
+    drop.innerHTML = LIST_COLS_ALL.map(c =>
+      `<label><input type="checkbox"${cols[c]?' checked':''} onchange="toggleListCol('${c}',this.checked)">${LIST_COLS_LABELS[c]}</label>`
+    ).join('');
+    drop.style.display = 'block';
+  } else {
+    drop.style.display = 'none';
+  }
+}
+
+function toggleListCol(col, visible) {
+  const cols = loadListCols();
+  cols[col] = visible;
+  // Keep at least one column always visible
+  if (!Object.values(cols).some(Boolean)) { cols[col] = true; return; }
+  saveListCols(cols);
+  renderAll();
+  // Re-render picker so checkboxes stay in sync
+  const cols2 = loadListCols();
+  const drop = document.getElementById('colPickerDrop');
+  if (drop && listColPickerOpen) {
+    drop.innerHTML = LIST_COLS_ALL.map(c =>
+      `<label><input type="checkbox"${cols2[c]?' checked':''} onchange="toggleListCol('${c}',this.checked)">${LIST_COLS_LABELS[c]}</label>`
+    ).join('');
+  }
+}
+
+function setListSort(col) {
+  if (listSortCol === col) {
+    listSortDir = listSortDir === 'asc' ? 'desc' : 'asc';
+  } else {
+    listSortCol = col;
+    listSortDir = 'asc';
+  }
+  renderAll();
+}
+
 /* ── PAGINATION HELPER ── */
 function buildPager(total, page, pageSize, setPage, setSize, sizeKey) {
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
@@ -2798,6 +2948,20 @@ function renderAll(){
     else if(qf==='up')mf=l.fuR&&l.fuD&&diffD(l.fuD)>0;
     return mq&&ms&&mf&&mp;
   });
+  // Sort
+  const qSort = document.getElementById('qSort')?.value || '';
+  if (qSort === 'recent_contact') list.sort((a,b) => (b.lc||'').localeCompare(a.lc||''));
+  else if (qSort === 'recent_update') list.sort((a,b) => (b.updatedAt||b.createdAt||'').localeCompare(a.updatedAt||a.createdAt||''));
+  else if (qSort === 'deal_asc') list.sort((a,b) => (a.deal||'').localeCompare(b.deal||''));
+  else if (qSort === 'deal_desc') list.sort((a,b) => (b.deal||'').localeCompare(a.deal||''));
+  // Column sort (list view header clicks)
+  if (leadsLayout === 'list' && listSortCol) {
+    list.sort((a,b) => {
+      const va = String(a[listSortCol]||''), vb = String(b[listSortCol]||'');
+      return listSortDir === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va);
+    });
+  }
+
   const grid=document.getElementById('leadsGrid'),empty=document.getElementById('emptyState');
   if(!list.length){grid.innerHTML='';empty.style.display='block';renderStats();checkReminders();return}
   empty.style.display='none';
@@ -2807,19 +2971,34 @@ function renderAll(){
   const pager = buildPager(totalDeals, dealPage, dealPageSize, 'setDealPage', 'setDealPageSize');
   // List view
   if (leadsLayout === 'list') {
+    const cols = loadListCols();
+    const visCols = LIST_COLS_ALL.filter(c => cols[c]);
+    const colCount = visCols.length + 1; // +1 for actions
+    const mkTh = (c) => {
+      const isSorted = listSortCol === c;
+      const arrow = isSorted ? (listSortDir === 'asc' ? '↑' : '↓') : '↕';
+      return `<th class="sortable${isSorted?' sort-'+listSortDir:''}" onclick="setListSort('${c}')">${LIST_COLS_LABELS[c]}<span class="sort-arrow">${arrow}</span></th>`;
+    };
+    const mkTd = (l, c) => {
+      const dd=diffD(l.fuD),isOv=l.fuR&&dd!==null&&dd<0,isTd=l.fuR&&dd===0;
+      switch(c) {
+        case 'deal': return `<td><div class="lt-deal">${esc(l.deal||'Unnamed')}</div>${(l.contacts||[])[0]?.name?`<div class="lt-sub">${esc(l.contacts[0].name)}</div>`:''}</td>`;
+        case 'type': return `<td style="color:var(--t2)">${esc(l.type||'—')}</td>`;
+        case 'stage': return `<td><span class="sbadge ${scls(l.stage)}">${esc(l.stage)}</span></td>`;
+        case 'priority': { const pc=l.priority==='High'?'var(--accent)':l.priority==='Low'?'var(--t3)':'var(--t2)'; return `<td style="color:${pc};font-size:11px;font-weight:500">${esc(l.priority)}</td>`; }
+        case 'fuD': { const ft=l.fuR&&l.fuD?(isOv?`<span style="color:var(--danger)">⚠ ${fmtD(l.fuD)}</span>`:isTd?`<span style="color:var(--warn)">Today</span>`:`<span style="color:var(--t2)">${fmtD(l.fuD)}</span>`):'—'; return `<td>${ft}</td>`; }
+        case 'lc': return `<td style="color:var(--t3)">${l.lc?fmtD(l.lc):'—'}</td>`;
+        case 'assigned': return `<td style="color:var(--t2)">${esc(l.assigned||'—')}</td>`;
+        case 'loc': return `<td style="color:var(--t3);font-size:11px">${esc(l.loc||'—')}</td>`;
+        case 'branches': return `<td style="color:var(--t3)">${esc(l.branches||'—')}</td>`;
+        default: return '<td></td>';
+      }
+    };
     grid.className = 'grid list-view-wrap';
     const rows = pageDeals.map(l => {
-      const dd=diffD(l.fuD),isOv=l.fuR&&dd!==null&&dd<0,isTd=l.fuR&&dd===0;
-      const fuTxt=l.fuR&&l.fuD?(isOv?`<span style="color:var(--danger)">⚠ ${fmtD(l.fuD)}</span>`:isTd?`<span style="color:var(--warn)">Today</span>`:`<span style="color:var(--t2)">${fmtD(l.fuD)}</span>`):'—';
-      const priColor=l.priority==='High'?'var(--accent)':l.priority==='Low'?'var(--t3)':'var(--t2)';
       const isExp = listRowExpanded === l.id;
       const mainRow = `<tr class="lt-main${isExp?' lt-expanded':''}" onclick="toggleListRow('${l.id}')">
-        <td><div class="lt-deal">${esc(l.deal||'Unnamed')}</div>${(l.contacts||[])[0]?.name?`<div class="lt-sub">${esc(l.contacts[0].name)}</div>`:''}</td>
-        <td style="color:var(--t2)">${esc(l.type||'—')}</td>
-        <td><span class="sbadge ${scls(l.stage)}">${esc(l.stage)}</span></td>
-        <td style="color:${priColor};font-size:11px;font-weight:500">${esc(l.priority)}</td>
-        <td>${fuTxt}</td>
-        <td style="color:var(--t3)">${l.lc?fmtD(l.lc):'—'}</td>
+        ${visCols.map(c => mkTd(l, c)).join('')}
         <td><div class="lt-acts" onclick="event.stopPropagation()">
           <button class="ib ed" onclick="openLeadModal('${l.id}')" title="Edit"><span class="ib-tip">Edit</span>✎</button>
           <button class="ib" onclick="openDrawer('${l.id}','tickets')" title="Tickets &amp; Log"><span class="ib-tip">Tickets &amp; Log</span>🎫</button>
@@ -2829,9 +3008,10 @@ function renderAll(){
       if (!isExp) return mainRow;
       const locArr=(l.loc||'').split(', ').filter(Boolean);
       const ctcList=(l.contacts||[]).map(c=>`${esc(c.name||'')}${c.role?' · '+esc(c.role):''}${c.phone?' · '+esc(c.phone):''}`).join('<br>');
-      const detailRow = `<tr class="lt-detail"><td colspan="7"><div class="lt-detail-body">
+      const detailRow = `<tr class="lt-detail"><td colspan="${colCount}"><div class="lt-detail-body">
         ${locArr.length?`<div class="ltd-row"><div class="ltd-lbl">Locations</div><div class="ltd-val">${locArr.map(v=>esc(v)).join(', ')}</div></div>`:''}
         ${l.branches?`<div class="ltd-row"><div class="ltd-lbl">Branches</div><div class="ltd-val">${esc(l.branches)}</div></div>`:''}
+        ${l.assigned?`<div class="ltd-row"><div class="ltd-lbl">Assigned To</div><div class="ltd-val">${esc(l.assigned)}</div></div>`:''}
         ${l.soft?`<div class="ltd-row"><div class="ltd-lbl">Current POS</div><div class="ltd-val">${esc(l.soft)}</div></div>`:''}
         ${l.del?`<div class="ltd-row"><div class="ltd-lbl">Delivery App</div><div class="ltd-val">${esc(l.del)}</div></div>`:''}
         ${ctcList?`<div class="ltd-row"><div class="ltd-lbl">Contacts</div><div class="ltd-val">${ctcList}</div></div>`:''}
@@ -2840,7 +3020,7 @@ function renderAll(){
       return mainRow + detailRow;
     }).join('');
     grid.innerHTML = `<div class="list-table-scroll"><table class="leads-table"><thead><tr>
-      <th>Business</th><th>Category</th><th>Stage</th><th>Priority</th><th>Follow-up</th><th>Last Contact</th><th></th>
+      ${visCols.map(mkTh).join('')}<th></th>
     </tr></thead><tbody>${rows}</tbody></table></div>${pager}`;
     renderStats();checkReminders();return;
   }
@@ -2948,8 +3128,14 @@ function exportCSV(){
 }
 
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')save()});
-document.addEventListener('click', () => {
+document.addEventListener('click', (e) => {
   document.querySelectorAll('.stage-dropdown').forEach(d => { d.style.display = 'none'; });
+  // Close column picker if clicking outside
+  if (listColPickerOpen && !document.getElementById('colPickerWrap')?.contains(e.target)) {
+    listColPickerOpen = false;
+    const drop = document.getElementById('colPickerDrop');
+    if (drop) drop.style.display = 'none';
+  }
 });
 document.addEventListener('keydown',e=>{
   if(e.key==='Escape'){document.querySelectorAll('.stage-dropdown').forEach(d=>{d.style.display='none'});const discOv=document.getElementById('discardOv');if(discOv.classList.contains('open')){cancelDiscard();return}if(document.getElementById('notifPanel').classList.contains('open')){closeNotifPanel();return}if(fuPanelOpen){closeFuPanel();return}if(document.getElementById('leadOv').classList.contains('open')){tryCloseLeadModal();return}if(document.getElementById('tickOv').classList.contains('open')){tryCloseTicketModal();return}if(document.getElementById('drawer').classList.contains('open')){closeDrawer();return}closeTg();closeWa();closeEm()}
@@ -3053,7 +3239,7 @@ function openDrawer(leadId, tab='tickets') {
   renderDrawer();
   document.getElementById('drawer').classList.add('open');
   document.getElementById('drawerOverlay').classList.add('open');
-  document.body.style.overflow = 'hidden';
+  lockBodyScroll();
   if (tab === 'log') {
     setTimeout(() => document.getElementById('drawerLogTa')?.focus(), 250);
   }
@@ -3062,7 +3248,7 @@ function openDrawer(leadId, tab='tickets') {
 function closeDrawer() {
   document.getElementById('drawer').classList.remove('open');
   document.getElementById('drawerOverlay').classList.remove('open');
-  document.body.style.overflow = '';
+  unlockBodyScroll();
   drawerLeadId = null;
 }
 
@@ -3736,8 +3922,13 @@ async function confirmImport() {
 function toggleLeadsLayout() {
   leadsLayout = leadsLayout === 'grid' ? 'list' : 'grid';
   listRowExpanded = null;
+  listColPickerOpen = false;
+  const colPickerDrop = document.getElementById('colPickerDrop');
+  if (colPickerDrop) colPickerDrop.style.display = 'none';
   const btn = document.getElementById('layoutBtn');
   if (btn) btn.textContent = leadsLayout === 'grid' ? '☰' : '⊞';
+  const cpWrap = document.getElementById('colPickerWrap');
+  if (cpWrap) cpWrap.style.display = leadsLayout === 'list' ? 'inline-flex' : 'none';
   renderAll();
 }
 
@@ -3791,6 +3982,103 @@ function renderActivity() {
 
 function setInitLogType(type) {
   document.querySelectorAll('#initLogTypeRow .log-type-opt').forEach(e => e.classList.toggle('sel', e.dataset.type === type));
+}
+
+/* ── ANALYTICS ── */
+function renderAnalytics() {
+  const content = document.getElementById('analyticsContent');
+  if (!content) return;
+  const startVal = content._anaStart || '';
+  const endVal = content._anaEnd || '';
+
+  let entries = [];
+  leads.forEach(l => {
+    (l.log || []).forEach(e => entries.push({ ...e, deal: l.deal, leadId: l.id }));
+  });
+
+  const applyDateFilter = (s, e) => {
+    content._anaStart = s; content._anaEnd = e;
+    let filtered = entries;
+    if (s) filtered = filtered.filter(x => x.date >= s);
+    if (e) filtered = filtered.filter(x => x.date <= e + 'T23:59:59');
+
+    const byUser = {};
+    filtered.forEach(x => {
+      const u = x.by || 'Unassigned';
+      if (!byUser[u]) byUser[u] = { total:0, note:0, call:0, meeting:0, email:0, whatsapp:0, visit:0, other:0 };
+      byUser[u].total++;
+      byUser[u][x.type] = (byUser[u][x.type] || 0) + 1;
+    });
+    const users = Object.entries(byUser).sort((a,b) => b[1].total - a[1].total);
+    const maxTotal = users[0]?.[1].total || 1;
+
+    const kpiCalls = filtered.filter(x=>x.type==='call').length;
+    const kpiMeetings = filtered.filter(x=>x.type==='meeting').length;
+
+    content.innerHTML = `
+      <div class="analytics-wrap">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;flex-wrap:wrap" class="no-print">
+          <span style="font-size:13px;font-weight:600;color:var(--t1)">Team Activity Analytics</span>
+          <div style="display:flex;align-items:center;gap:8px;margin-left:auto;flex-wrap:wrap">
+            <input type="date" class="sel" id="anaStart" value="${s}" onchange="updateAnalyticsFilter()" placeholder="From" title="From date">
+            <span style="color:var(--t3);font-size:11px">to</span>
+            <input type="date" class="sel" id="anaEnd" value="${e}" onchange="updateAnalyticsFilter()" placeholder="To" title="To date">
+            <button class="btn ghost" onclick="exportAnalyticsExcel()">⬇ Excel</button>
+            <button class="btn ghost" onclick="window.print()">⎙ Print / PDF</button>
+          </div>
+        </div>
+        <div class="analytics-kpi-row">
+          <div class="analytics-kpi"><div class="ak-val">${filtered.length}</div><div class="ak-lbl">Total Interactions</div></div>
+          <div class="analytics-kpi"><div class="ak-val">${users.length}</div><div class="ak-lbl">Team Members Active</div></div>
+          <div class="analytics-kpi"><div class="ak-val">${kpiCalls}</div><div class="ak-lbl">Calls Logged</div></div>
+          <div class="analytics-kpi"><div class="ak-val">${kpiMeetings}</div><div class="ak-lbl">Meetings Logged</div></div>
+        </div>
+        ${users.length ? `
+        <div style="overflow-x:auto;border:1px solid var(--b1);border-radius:var(--r)">
+          <table class="analytics-table" id="analyticsTable">
+            <thead><tr>
+              <th>Team Member</th><th>Total</th><th>Activity</th>
+              <th>Notes</th><th>Calls</th><th>Meetings</th><th>Emails</th><th>WhatsApp</th><th>Visits</th><th>Other</th>
+            </tr></thead>
+            <tbody>
+              ${users.map(([name, s]) => `<tr>
+                <td class="at-name">${esc(name)}</td>
+                <td class="at-total">${s.total}</td>
+                <td style="min-width:120px"><div style="display:flex;align-items:center;gap:8px"><div class="analytics-bar-wrap"><div class="analytics-bar" style="width:${Math.round(s.total/maxTotal*100)}%"></div></div><span style="font-size:10.5px;color:var(--t3)">${Math.round(s.total/maxTotal*100)}%</span></div></td>
+                <td>${s.note||0}</td><td>${s.call||0}</td><td>${s.meeting||0}</td>
+                <td>${s.email||0}</td><td>${s.whatsapp||0}</td><td>${s.visit||0}</td><td>${s.other||0}</td>
+              </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>` : `<div class="drawer-empty" style="padding:60px 20px"><div class="drawer-empty-ico" style="font-size:28px;opacity:0.3">📊</div><span style="font-size:12px;color:var(--t3)">No activity data yet. Interactions need a <b>created_by</b> column to be tracked by user.</span></div>`}
+      </div>`;
+  };
+
+  applyDateFilter(startVal, endVal);
+}
+
+function updateAnalyticsFilter() {
+  const s = document.getElementById('anaStart')?.value || '';
+  const e = document.getElementById('anaEnd')?.value || '';
+  const content = document.getElementById('analyticsContent');
+  if (content) { content._anaStart = s; content._anaEnd = e; }
+  renderAnalytics();
+}
+
+function exportAnalyticsExcel() {
+  const table = document.getElementById('analyticsTable');
+  if (!table || typeof XLSX === 'undefined') { toast('No data to export'); return; }
+  const wb = XLSX.utils.book_new();
+  // Build data manually to skip the bar chart column
+  const rows = [['Team Member','Total','Notes','Calls','Meetings','Emails','WhatsApp','Visits','Other']];
+  table.querySelectorAll('tbody tr').forEach(tr => {
+    const tds = tr.querySelectorAll('td');
+    rows.push([tds[0]?.textContent, +tds[1]?.textContent, +tds[3]?.textContent, +tds[4]?.textContent,
+      +tds[5]?.textContent, +tds[6]?.textContent, +tds[7]?.textContent, +tds[8]?.textContent, +tds[9]?.textContent]);
+  });
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  XLSX.utils.book_append_sheet(wb, ws, 'Analytics');
+  XLSX.writeFile(wb, `flow-analytics-${todayS()}.xlsx`);
 }
 
 /* ── BULK SELECT ── */
