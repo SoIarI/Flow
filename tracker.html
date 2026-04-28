@@ -1838,21 +1838,6 @@ async function checkForUpdate() {
 
 function reloadForUpdate() { location.reload(true); }
 
-// ── SEEN FOLLOW-UPS (Supabase-backed) ───────────────────────
-function getSeenIds() {
-  try { return new Set(JSON.parse(localStorage.getItem('flow_fu_seen')||'[]')); } catch { return new Set(); }
-}
-
-function markSeen(leadId) {
-  const s = getSeenIds(); s.add(leadId);
-  localStorage.setItem('flow_fu_seen', JSON.stringify([...s]));
-}
-
-
-// ─────────────────────────────────────────────────────────────
-
-
-const KEY='flow_v4';
 let leads=[],editId=null,tickLeadId=null,editTickId=null,msgLeadId=null;
 let ctcs=[],fuDate='',delMode='none';
 
@@ -1992,11 +1977,6 @@ function getTypeValue() {
   return sub || cat;
 }
 
-function load(){/* data loaded from Supabase via loadFromSupabase() */}
-function save(){
-  /* In Supabase mode, individual operations call saveLeadToSupabase etc.
-     This stub keeps compatibility with any legacy callers. */
-}
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2);
 const todayS=()=>new Date().toISOString().split('T')[0];
 const diffD=d=>d?Math.round((new Date(d+' 00:00:00')-new Date(todayS()+' 00:00:00'))/86400000):null;
@@ -2205,10 +2185,11 @@ function openLeadModal(id=null){
     document.querySelectorAll('#initLogTypeRow .log-type-opt').forEach(e=>e.classList.remove('sel'));
   }
   renderCtcList();
+  lockBodyScroll();
   document.getElementById('leadOv').classList.add('open');
   requestAnimationFrame(() => { _leadSnap = snapLeadForm(); });
 }
-function closeLeadModal(){document.getElementById('leadOv').classList.remove('open');editId=null;ctcs=[];_leadSnap=null;}
+function closeLeadModal(){document.getElementById('leadOv').classList.remove('open');unlockBodyScroll();editId=null;ctcs=[];_leadSnap=null;}
 
 function saveLead(){
   const deal=document.getElementById('f_deal').value.trim();
@@ -2320,10 +2301,11 @@ function openTicketModal(leadId,ticketId=null){
     document.getElementById('tkDateDisplay').textContent='';
   }
   onTicketTypeChange();
+  lockBodyScroll();
   document.getElementById('tickOv').classList.add('open');
   requestAnimationFrame(() => { _tickSnap = snapTicketForm(); });
 }
-function closeTicketModal(){document.getElementById('tickOv').classList.remove('open');tickLeadId=null;editTickId=null;_tickSnap=null;}
+function closeTicketModal(){document.getElementById('tickOv').classList.remove('open');unlockBodyScroll();tickLeadId=null;editTickId=null;_tickSnap=null;}
 
 function onTicketTypeChange(){
   const t=document.getElementById('t_type').value;
@@ -2472,7 +2454,7 @@ function sendEm(){
 function closeEm(){document.getElementById('emOv').classList.remove('open');emLeadId=null}
 
 function markContacted(id){
-  const l=leads.find(x=>x.id===id);if(l){l.lc=todayS();save();renderAll()}
+  const l=leads.find(x=>x.id===id);if(l){l.lc=todayS();renderAll()}
 }
 
 /* ── REMINDERS ── */
@@ -2844,16 +2826,14 @@ async function deleteGlobalTicket(leadId, tickId) {
 /* ── SCROLL LOCK ── */
 function lockBodyScroll() {
   _scrollLockY = window.scrollY;
-  document.body.style.top = `-${_scrollLockY}px`;
-  document.body.style.position = 'fixed';
-  document.body.style.width = '100%';
+  const sbW = window.innerWidth - document.documentElement.clientWidth;
+  document.body.style.overflow = 'hidden';
+  if (sbW > 0) document.body.style.paddingRight = sbW + 'px';
 }
 function unlockBodyScroll() {
-  const y = _scrollLockY;
-  document.body.style.position = '';
-  document.body.style.top = '';
-  document.body.style.width = '';
-  window.scrollTo(0, y);
+  document.body.style.overflow = '';
+  document.body.style.paddingRight = '';
+  window.scrollTo(0, _scrollLockY);
 }
 
 /* ── COLUMN PICKER ── */
@@ -3127,7 +3107,6 @@ function exportCSV(){
   toast('✓ Exported '+leads.length+' leads');
 }
 
-document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')save()});
 document.addEventListener('click', (e) => {
   document.querySelectorAll('.stage-dropdown').forEach(d => { d.style.display = 'none'; });
   // Close column picker if clicking outside
@@ -3230,6 +3209,7 @@ let drawerLeadId = null;
 let drawerTab = 'tickets';
 
 function openDrawer(leadId, tab='tickets') {
+  lockBodyScroll(); // lock before any DOM changes to prevent scroll jump
   drawerLeadId = leadId;
   drawerTab = tab;
   const l = leads.find(x => x.id === leadId);
@@ -3239,7 +3219,6 @@ function openDrawer(leadId, tab='tickets') {
   renderDrawer();
   document.getElementById('drawer').classList.add('open');
   document.getElementById('drawerOverlay').classList.add('open');
-  lockBodyScroll();
   if (tab === 'log') {
     setTimeout(() => document.getElementById('drawerLogTa')?.focus(), 250);
   }
@@ -3933,8 +3912,14 @@ function toggleLeadsLayout() {
 }
 
 function toggleListRow(leadId) {
+  const sc = document.querySelector('.list-table-scroll');
+  const savedTop = sc ? sc.scrollTop : 0;
   listRowExpanded = listRowExpanded === leadId ? null : leadId;
   renderAll();
+  requestAnimationFrame(() => {
+    const sc2 = document.querySelector('.list-table-scroll');
+    if (sc2) sc2.scrollTop = savedTop;
+  });
 }
 
 let activityFilter = '';
