@@ -513,6 +513,15 @@ select option{background:var(--s2)}
 .ob-chevron{font-size:10px;color:var(--t3)}
 .ob-body{padding:14px;display:flex;flex-direction:column;gap:10px;border-top:1px solid var(--b1)}
 
+/* ── FILTER BAR ── */
+.filter-bar{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:7px 24px;border-bottom:1px solid var(--b1);background:var(--bg);position:sticky;top:calc(52px + 38px);z-index:88}
+.filter-bar .sel{font-size:11px;padding:5px 9px}
+#filterToggleBtn.active-filter{color:var(--accent)}
+/* ── OVERFLOW MENU ── */
+.ovf-item{display:flex;align-items:center;width:100%;padding:7px 14px;font-family:'Space Mono',monospace;font-size:11px;color:var(--t2);cursor:pointer;border:none;background:transparent;text-align:left;transition:background 0.1s;white-space:nowrap}
+.ovf-item:hover{background:var(--b1);color:var(--t1)}
+.ovf-sep{height:1px;background:var(--b1);margin:4px 0}
+#bulkSelectBtn.active{color:var(--accent)}
 /* ── MOBILE NAV STRIP ── */
 .mobile-nav{display:none;align-items:center;gap:0;background:var(--bg);border-bottom:1px solid var(--b1);overflow-x:auto;-webkit-overflow-scrolling:touch;position:sticky;top:50px;z-index:89;padding:0 8px}
 .mobile-nav::-webkit-scrollbar{display:none}
@@ -769,43 +778,51 @@ body.rep-mode .admin-only{display:none!important}
 
 <div class="toolbar">
   <button class="btn primary" id="newLeadBtn" onclick="openLeadModal()">＋ New Lead</button>
-  <button class="btn ghost" id="bulkSelectBtn" onclick="toggleBulkMode()" title="Select leads to bulk-update">☑ Select</button>
-  <button class="btn ghost" id="layoutBtn" onclick="toggleLeadsLayout()" title="Switch between grid and list view">☰</button>
+  <div class="sbox" id="leadsSearchBox"><input type="text" id="qS" placeholder="Search…" oninput="renderAll()"></div>
+  <button class="btn ghost" id="filterToggleBtn" onclick="toggleFilterBar()">Filters <span id="filterBadge" style="display:none;color:var(--accent);font-size:9px">●</span></button>
+  <button class="btn ghost" id="layoutBtn" onclick="toggleLeadsLayout()" title="Grid / List view">☰</button>
   <div class="col-picker" id="colPickerWrap" style="display:none">
-    <button class="btn ghost" id="colPickerBtn" onclick="toggleColPicker()" title="Show/hide columns">⊟ Columns</button>
+    <button class="btn ghost" id="colPickerBtn" onclick="toggleColPicker()">Cols ⊟</button>
     <div class="col-picker-drop" id="colPickerDrop" style="display:none"></div>
   </div>
-  <div class="tsep"></div>
-  <div class="sbox" id="leadsSearchBox"><input type="text" id="qS" placeholder="Search leads…" oninput="renderAll()"></div>
-  <select class="sel" id="qSt" onchange="renderAll()">
-    <option value="">All stages</option>
+  <div style="position:relative;margin-left:auto">
+    <button class="btn ghost" id="overflowBtn" onclick="toggleOverflowMenu()" style="letter-spacing:2px">···</button>
+    <div id="overflowMenu" style="display:none;position:absolute;top:calc(100% + 6px);right:0;min-width:160px;background:var(--bg);border:1px solid var(--b2);border-radius:var(--r);box-shadow:var(--neu-out-lg);z-index:310;padding:5px 0;flex-direction:column">
+      <button id="bulkSelectBtn" class="ovf-item" onclick="toggleBulkMode();closeOverflowMenu()">☑ Select leads</button>
+      <button class="ovf-item" onclick="exportCSV();closeOverflowMenu()">⬇ Export CSV</button>
+      <button class="ovf-item" onclick="openImportModal();closeOverflowMenu()">⬆ Import</button>
+      <div class="ovf-sep admin-only"></div>
+      <button class="ovf-item admin-only" onclick="clearAll();closeOverflowMenu()" style="color:var(--danger)">⚠ Clear DB</button>
+    </div>
+  </div>
+  <input type="file" id="csvFileInput" accept=".csv,.xlsx,.xls" style="display:none" onchange="handleCSVFile(this)">
+</div>
+
+<!-- Filter bar -->
+<div class="filter-bar" id="filterBar" style="display:none">
+  <select class="sel" id="qSt" onchange="renderAll();updateFilterBadge()">
+    <option value="">Stage</option>
     <option>New</option><option>Contacted</option><option>Interested</option>
     <option>Meeting Set</option><option>Negotiating</option>
     <option>Closed</option><option>Lost</option><option>No Response</option><option>On Hold</option>
   </select>
-  <select class="sel" id="qFu" onchange="renderAll()">
-    <option value="">All follow-ups</option>
+  <select class="sel" id="qFu" onchange="renderAll();updateFilterBadge()">
+    <option value="">Follow-up</option>
     <option value="over">Overdue</option><option value="tod">Due today</option><option value="up">Upcoming</option>
   </select>
-  <select class="sel" id="qPr" onchange="renderAll()">
-    <option value="">All priorities</option>
+  <select class="sel" id="qPr" onchange="renderAll();updateFilterBadge()">
+    <option value="">Priority</option>
     <option>High</option><option>Normal</option><option>Low</option>
   </select>
-  <select class="sel" id="qSort" onchange="renderAll()" title="Sort order">
-    <option value="">Default order</option>
-    <option value="recent_contact">Recently Contacted</option>
-    <option value="recent_update">Recently Updated</option>
+  <select class="sel" id="qSort" onchange="renderAll()">
+    <option value="">Sort: Default</option>
+    <option value="recent_contact">Recent contact</option>
+    <option value="recent_update">Recently updated</option>
     <option value="deal_asc">Name A–Z</option>
     <option value="deal_desc">Name Z–A</option>
   </select>
-  <div class="tsep"></div>
-  <button class="btn ghost" onclick="exportCSV()">⬇ Export</button>
-  <button class="btn ghost" onclick="openImportModal()">⬆ Import</button>
-  <input type="file" id="csvFileInput" accept=".csv,.xlsx,.xls" style="display:none" onchange="handleCSVFile(this)">
-  <button class="btn ghost admin-only" onclick="clearAll()" style="margin-left:auto;color:var(--danger);border-color:rgba(220,79,79,0.25)" title="Delete all records from database">⚠ Clear DB</button>
+  <button class="btn ghost" id="clearFiltersBtn" onclick="clearLeadFilters()" style="display:none;color:var(--danger)">✕ Clear</button>
 </div>
-
-<div class="stats-bar" id="statsBar"></div>
 
 <div class="main">
   <div id="leadsArea">
@@ -2662,21 +2679,18 @@ function dismissFu(e, leadId) {
 function scrollToOverdue() { openFuPanel(); }
 
 /* ── STATS ── */
-function renderStats(){
-  const n=leads.length,ac=leads.filter(l=>!['Closed','Lost','No Response'].includes(l.stage)).length,
-    cl=leads.filter(l=>l.stage==='Closed').length,mt=leads.filter(l=>l.stage==='Meeting Set').length,
-    ov=leads.filter(l=>l.fuR&&l.fuD&&diffD(l.fuD)<0).length,
-    tk=leads.reduce((a,l)=>(a+(l.tickets||[]).length),0);
-  const nr=leads.filter(l=>l.stage==='No Response').length;
-  document.getElementById('statsBar').innerHTML=`
-    <div class="stat"><div class="sn">${n}</div><div class="sl">Total</div></div>
-    <div class="stat"><div class="sn a">${ac}</div><div class="sl">Active</div></div>
-    <div class="stat"><div class="sn g">${cl}</div><div class="sl">Closed</div></div>
-    <div class="stat"><div class="sn y">${mt}</div><div class="sl">Meetings</div></div>
-    <div class="stat"><div class="sn r">${ov}</div><div class="sl">Overdue</div></div>
-    <div class="stat"><div class="sn" style="color:var(--t2)">${nr}</div><div class="sl">No Response</div></div>
-    <div class="stat"><div class="sn b">${tk}</div><div class="sl">Tickets</div></div>`;
+function getPipelineStats() {
+  return {
+    total: leads.length,
+    active: leads.filter(l=>!['Closed','Lost','No Response'].includes(l.stage)).length,
+    closed: leads.filter(l=>l.stage==='Closed').length,
+    meetings: leads.filter(l=>l.stage==='Meeting Set').length,
+    overdue: leads.filter(l=>l.fuR&&l.fuD&&diffD(l.fuD)<0).length,
+    noResp: leads.filter(l=>l.stage==='No Response').length,
+    tickets: leads.reduce((a,l)=>(a+(l.tickets||[]).length),0)
+  };
 }
+function renderStats(){ /* stats moved to analytics overview */ }
 
 /* ── VIEW MODE ── */
 let currentView = 'leads';
@@ -2705,33 +2719,38 @@ function setView(view) {
   const ticketsArea = document.getElementById('ticketsArea');
   document.getElementById('activityArea').style.display = 'none';
   document.getElementById('analyticsArea').style.display = 'none';
-  const leadsFilters = document.querySelectorAll('#qS,#qSt,#qFu,#qPr,#qSort,#leadsSearchBox,#newLeadBtn,#bulkSelectBtn,#layoutBtn');
+  const leadsOnlyEls = document.querySelectorAll('#leadsSearchBox,#newLeadBtn,#layoutBtn,#filterToggleBtn,#overflowBtn');
+  const filterBar = document.getElementById('filterBar');
   const cpWrap = document.getElementById('colPickerWrap');
   if (view === 'leads') {
     leadsArea.style.display = '';
     ticketsArea.style.display = 'none';
-    leadsFilters.forEach(el => el && (el.style.display = ''));
+    leadsOnlyEls.forEach(el => el && (el.style.display = ''));
     if (cpWrap) cpWrap.style.display = leadsLayout === 'list' ? 'inline-flex' : 'none';
+    if (filterBar) filterBar.style.display = filterBarOpen ? 'flex' : 'none';
     renderAll();
   } else if (view === 'tickets') {
     leadsArea.style.display = 'none';
     ticketsArea.style.display = '';
-    leadsFilters.forEach(el => el && (el.style.display = 'none'));
+    leadsOnlyEls.forEach(el => el && (el.style.display = 'none'));
     if (cpWrap) cpWrap.style.display = 'none';
+    if (filterBar) filterBar.style.display = 'none';
     renderAllTickets();
   } else if (view === 'activity') {
     leadsArea.style.display = 'none';
     ticketsArea.style.display = 'none';
     document.getElementById('activityArea').style.display = '';
-    leadsFilters.forEach(el => el && (el.style.display = 'none'));
+    leadsOnlyEls.forEach(el => el && (el.style.display = 'none'));
     if (cpWrap) cpWrap.style.display = 'none';
+    if (filterBar) filterBar.style.display = 'none';
     renderActivity();
   } else if (view === 'analytics') {
     leadsArea.style.display = 'none';
     ticketsArea.style.display = 'none';
     document.getElementById('analyticsArea').style.display = '';
-    leadsFilters.forEach(el => el && (el.style.display = 'none'));
+    leadsOnlyEls.forEach(el => el && (el.style.display = 'none'));
     if (cpWrap) cpWrap.style.display = 'none';
+    if (filterBar) filterBar.style.display = 'none';
     renderAnalytics();
   }
 }
@@ -3146,11 +3165,13 @@ function exportCSV(){
 
 document.addEventListener('click', (e) => {
   document.querySelectorAll('.stage-dropdown').forEach(d => { d.style.display = 'none'; });
-  // Close column picker if clicking outside
   if (listColPickerOpen && !document.getElementById('colPickerWrap')?.contains(e.target)) {
     listColPickerOpen = false;
     const drop = document.getElementById('colPickerDrop');
     if (drop) drop.style.display = 'none';
+  }
+  if (overflowMenuOpen && !document.getElementById('overflowBtn')?.contains(e.target) && !document.getElementById('overflowMenu')?.contains(e.target)) {
+    closeOverflowMenu();
   }
 });
 document.addEventListener('keydown',e=>{
@@ -3935,6 +3956,39 @@ async function confirmImport() {
   toast(msg);
 }
 
+/* ── FILTER BAR ── */
+let filterBarOpen = false;
+function toggleFilterBar() {
+  filterBarOpen = !filterBarOpen;
+  const bar = document.getElementById('filterBar');
+  if (bar) bar.style.display = filterBarOpen ? 'flex' : 'none';
+  document.getElementById('filterToggleBtn')?.classList.toggle('active-filter', filterBarOpen);
+}
+function updateFilterBadge() {
+  const active = !!(document.getElementById('qSt')?.value || document.getElementById('qFu')?.value || document.getElementById('qPr')?.value);
+  const badge = document.getElementById('filterBadge');
+  if (badge) badge.style.display = active ? 'inline' : 'none';
+  const clrBtn = document.getElementById('clearFiltersBtn');
+  if (clrBtn) clrBtn.style.display = active ? 'inline-flex' : 'none';
+}
+function clearLeadFilters() {
+  ['qSt','qFu','qPr'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  updateFilterBadge();
+  renderAll();
+}
+/* ── OVERFLOW MENU ── */
+let overflowMenuOpen = false;
+function toggleOverflowMenu() {
+  overflowMenuOpen = !overflowMenuOpen;
+  const menu = document.getElementById('overflowMenu');
+  if (menu) menu.style.display = overflowMenuOpen ? 'flex' : 'none';
+}
+function closeOverflowMenu() {
+  overflowMenuOpen = false;
+  const menu = document.getElementById('overflowMenu');
+  if (menu) menu.style.display = 'none';
+}
+
 function toggleLeadsLayout() {
   leadsLayout = leadsLayout === 'grid' ? 'list' : 'grid';
   listRowExpanded = null;
@@ -4037,9 +4091,21 @@ function renderAnalytics() {
     const kpiCalls = filtered.filter(x=>x.type==='call').length;
     const kpiMeetings = filtered.filter(x=>x.type==='meeting').length;
 
+    const ps = getPipelineStats();
     content.innerHTML = `
       <div class="analytics-wrap">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;flex-wrap:wrap" class="no-print">
+        <div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;font-family:'Space Mono',monospace">Pipeline Overview</div>
+        <div class="analytics-kpi-row" style="margin-bottom:24px">
+          <div class="analytics-kpi"><div class="ak-val">${ps.total}</div><div class="ak-lbl">Total leads</div></div>
+          <div class="analytics-kpi"><div class="ak-val" style="color:var(--accent)">${ps.active}</div><div class="ak-lbl">Active</div></div>
+          <div class="analytics-kpi"><div class="ak-val" style="color:var(--green)">${ps.closed}</div><div class="ak-lbl">Closed</div></div>
+          <div class="analytics-kpi"><div class="ak-val" style="color:var(--warn)">${ps.meetings}</div><div class="ak-lbl">Meetings set</div></div>
+          <div class="analytics-kpi"><div class="ak-val" style="color:var(--danger)">${ps.overdue}</div><div class="ak-lbl">Overdue</div></div>
+          <div class="analytics-kpi"><div class="ak-val" style="color:var(--t3)">${ps.noResp}</div><div class="ak-lbl">No response</div></div>
+          <div class="analytics-kpi"><div class="ak-val" style="color:var(--info)">${ps.tickets}</div><div class="ak-lbl">Tickets</div></div>
+        </div>
+        <div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;font-family:'Space Mono',monospace">Team Activity</div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap" class="no-print">
           <span style="font-size:13px;font-weight:600;color:var(--t1)">Team Activity Analytics</span>
           <div style="display:flex;align-items:center;gap:8px;margin-left:auto;flex-wrap:wrap">
             <input type="date" class="sel" id="anaStart" value="${s}" onchange="updateAnalyticsFilter()" placeholder="From" title="From date">
