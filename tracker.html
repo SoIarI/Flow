@@ -60,7 +60,7 @@
 .np-input:focus{box-shadow:var(--neu-in),0 0 0 2px var(--accent)}
 .np-test-btn{padding:6px 14px;border-radius:var(--r);border:none;background:var(--bg);color:var(--t2);font-family:'Space Mono',monospace;font-size:11px;cursor:pointer;transition:box-shadow 0.13s,color 0.13s;margin-top:4px;box-shadow:var(--neu-out)}
 .np-test-btn:hover{box-shadow:var(--neu-hover);color:var(--info)}
-.np-save-btn{width:100%;padding:9px;border-radius:var(--r);border:none;background:var(--accent);color:#fff;font-family:'Space Mono',monospace;font-size:11px;font-weight:700;cursor:pointer;transition:all 0.13s;margin-top:4px;box-shadow:4px 4px 10px rgba(0,102,102,0.35),-2px -2px 6px rgba(255,255,255,0.15)}
+.np-save-btn{width:100%;padding:9px;border-radius:var(--r);border:none;background:var(--accent);color:#fff;font-family:'Space Mono',monospace;font-size:11px;font-weight:700;cursor:pointer;transition:all 0.13s;margin-top:4px;box-shadow:2px 2px 6px rgba(0,102,102,0.3)}
 .np-save-btn:hover{background:var(--accent-h)}
 .settings-btn{display:flex;align-items:center;gap:5px;background:var(--bg);border:none;border-radius:99px;padding:5px 12px;font-family:'Space Mono',monospace;font-size:10px;color:var(--t3);cursor:pointer;transition:box-shadow 0.13s,color 0.13s;box-shadow:var(--neu-out)}
 .settings-btn:hover{color:var(--t2);box-shadow:var(--neu-hover)}
@@ -82,8 +82,8 @@
 .login-label{font-size:9.5px;color:var(--t3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;display:block;font-family:'Space Mono',monospace}
 .login-input{width:100%;background:var(--bg);border:none;border-radius:10px;padding:12px 15px;color:var(--t1);font-family:'Space Mono',monospace;font-size:13px;outline:none;transition:box-shadow 0.15s;margin-bottom:14px;box-shadow:var(--neu-in)}
 .login-input:focus{box-shadow:var(--neu-in),0 0 0 2px var(--accent)}
-.login-btn{width:100%;padding:13px;border-radius:10px;background:var(--accent);border:none;color:#fff;font-family:'Space Mono',monospace;font-size:13px;font-weight:700;cursor:pointer;transition:all 0.15s;letter-spacing:0.01em;box-shadow:4px 4px 10px rgba(0,102,102,0.4),-2px -2px 6px rgba(255,255,255,0.15)}
-.login-btn:hover{background:var(--accent-h);box-shadow:3px 3px 8px rgba(0,102,102,0.45),-2px -2px 6px rgba(255,255,255,0.15)}
+.login-btn{width:100%;padding:13px;border-radius:10px;background:var(--accent);border:none;color:#fff;font-family:'Space Mono',monospace;font-size:13px;font-weight:700;cursor:pointer;transition:all 0.15s;letter-spacing:0.01em;box-shadow:2px 2px 6px rgba(0,102,102,0.3)}
+.login-btn:hover{background:var(--accent-h)}
 .login-err{font-size:12px;color:var(--danger);margin-top:10px;display:none;text-align:center}
 .login-footer{margin-top:20px;font-size:11px;color:var(--t3);text-align:center;line-height:1.7}
 
@@ -116,13 +116,13 @@
   /* ── Neumorphism surfaces ── */
   --bg:#E8E6E3;--s1:#E8E6E3;--s2:#DDDBD8;--s3:#D2D0CC;
   /* ── Neumorphic shadow colours ── */
-  --neu-s:#C4C2BF;--neu-l:#FDFCFA;
-  /* ── Neumorphic shadow presets ── */
-  --neu-out:5px 5px 12px var(--neu-s),-5px -5px 12px var(--neu-l);
-  --neu-out-lg:10px 10px 24px var(--neu-s),-10px -10px 24px var(--neu-l);
-  --neu-in:inset 3px 3px 7px var(--neu-s),inset -3px -3px 7px var(--neu-l);
-  --neu-in-sm:inset 2px 2px 5px var(--neu-s),inset -2px -2px 5px var(--neu-l);
-  --neu-hover:3px 3px 8px var(--neu-s),-3px -3px 8px var(--neu-l);
+  --neu-s:#C8C6C3;--neu-l:#F8F7F5;
+  /* ── Neumorphic shadow presets (subtle) ── */
+  --neu-out:2px 2px 6px var(--neu-s),-2px -2px 6px var(--neu-l);
+  --neu-out-lg:4px 4px 12px var(--neu-s),-4px -4px 12px var(--neu-l);
+  --neu-in:inset 2px 2px 5px var(--neu-s),inset -2px -2px 5px var(--neu-l);
+  --neu-in-sm:inset 1px 1px 3px var(--neu-s),inset -1px -1px 3px var(--neu-l);
+  --neu-hover:2px 2px 5px var(--neu-s),-2px -2px 5px var(--neu-l);
   /* ── Borders (subtle, for structure only) ── */
   --b1:rgba(0,0,0,0.04);--b2:rgba(0,0,0,0.08);--b3:rgba(0,0,0,0.16);
   /* ── Accent: primary teal ── */
@@ -140,14 +140,17 @@
   --header-bg:rgba(232,230,227,0.94);
 }
 [data-theme="dark"]{
-  --bg:#1E1D2C;--s1:#1E1D2C;--s2:#181726;--s3:#131220;
-  --neu-s:#131222;--neu-l:#292838;
-  --b1:rgba(255,255,255,0.04);--b2:rgba(255,255,255,0.08);--b3:rgba(255,255,255,0.18);
-  --t1:#E2E1EE;--t2:#8E8CA6;--t3:#52506A;
-  --header-bg:rgba(30,29,44,0.94);
-  --accent:#00AAAA;--accent-h:#00BFBF;--accent-dim:rgba(0,170,170,0.14);
-  --green:#00C447;--green-dim:rgba(0,196,71,0.12);
-  --danger:#FF4070;--danger-dim:rgba(255,64,112,0.12);
+  --bg:#2C2B35;--s1:#2C2B35;--s2:#27262F;--s3:#222129;
+  --neu-s:#1E1D26;--neu-l:#383742;
+  --b1:rgba(255,255,255,0.05);--b2:rgba(255,255,255,0.09);--b3:rgba(255,255,255,0.16);
+  --t1:#E6E5EF;--t2:#9896B0;--t3:#60607A;
+  --header-bg:rgba(44,43,53,0.95);
+  --accent:#2AADAD;--accent-h:#33BFBF;--accent-dim:rgba(42,173,173,0.14);
+  --green:#2ECC71;--green-dim:rgba(46,204,113,0.12);
+  --danger:#FF6B81;--danger-dim:rgba(255,107,129,0.12);
+  --warn:#FFAA33;--warn-dim:rgba(255,170,51,0.12);
+  --info:#6699FF;--info-dim:rgba(102,153,255,0.12);
+  --purple:#AA88FF;--purple-dim:rgba(170,136,255,0.12);
 }
 *{margin:0;padding:0;box-sizing:border-box}
 html{scroll-behavior:smooth}
@@ -156,11 +159,16 @@ body{background:var(--bg);color:var(--t1);font-family:'Space Mono',monospace;min
 ::-webkit-scrollbar{width:3px;height:3px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--b2);border-radius:99px}
 
 /* HEADER */
-header{position:sticky;top:0;z-index:100;background:var(--header-bg);backdrop-filter:blur(20px);border-bottom:none;box-shadow:0 3px 10px var(--neu-s),0 -1px 4px var(--neu-l);padding:0 28px;display:flex;align-items:center;justify-content:space-between;height:54px}
-.logo{font-family:'Space Mono',monospace;font-weight:700;font-size:16px;letter-spacing:-0.3px;display:flex;align-items:center;gap:8px}
-.logo-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 10px rgba(0,102,102,0.5)}
-.logo-sub{font-size:10px;font-weight:400;color:var(--t3);letter-spacing:0.08em;text-transform:uppercase}
-.header-r{display:flex;align-items:center;gap:10px}
+header{position:sticky;top:0;z-index:100;background:var(--header-bg);backdrop-filter:blur(20px);border-bottom:1px solid var(--b1);box-shadow:0 1px 4px var(--neu-s);padding:0 24px;display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:16px;height:52px}
+.logo{font-family:'Space Mono',monospace;font-weight:700;font-size:15px;letter-spacing:-0.3px;display:flex;align-items:center;gap:7px;white-space:nowrap}
+.logo-dot{width:7px;height:7px;border-radius:50%;background:var(--accent)}
+.logo-sub{font-size:9px;font-weight:400;color:var(--t3);letter-spacing:0.08em;text-transform:uppercase}
+/* ── HEADER NAV TABS ── */
+.header-nav{display:flex;align-items:center;justify-content:center;gap:2px}
+.nav-tab{padding:5px 14px;border-radius:6px;font-size:11px;font-weight:400;color:var(--t3);cursor:pointer;border:none;background:transparent;transition:color 0.13s,background 0.13s;white-space:nowrap;font-family:'Space Mono',monospace}
+.nav-tab:hover{color:var(--t2);background:var(--b1)}
+.nav-tab.active{color:var(--t1);background:var(--b1);font-weight:700}
+.header-r{display:flex;align-items:center;gap:8px}
 .save-pill{display:flex;align-items:center;gap:6px;background:var(--s2);border:1px solid var(--b1);border-radius:99px;padding:5px 10px;font-size:10px;color:var(--t3)}
 .sdot{width:5px;height:5px;border-radius:50%;background:var(--green);animation:blink 2.5s infinite}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:0.2}}
@@ -168,13 +176,13 @@ header{position:sticky;top:0;z-index:100;background:var(--header-bg);backdrop-fi
 .sdot.saving{background:var(--warn);animation:none}.sdot.err{background:var(--danger);animation:none}
 
 /* TOOLBAR */
-.toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:11px 28px;border-bottom:none;background:var(--bg);position:sticky;top:54px;z-index:90;box-shadow:0 2px 8px var(--neu-s)}
+.toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:9px 24px;border-bottom:1px solid var(--b1);background:var(--bg);position:sticky;top:52px;z-index:90}
 .btn{font-family:'Space Mono',monospace;font-size:11px;font-weight:400;padding:7px 14px;border-radius:var(--r);border:none;background:var(--bg);color:var(--t2);cursor:pointer;transition:box-shadow 0.15s,color 0.13s;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;line-height:1;box-shadow:var(--neu-out)}
 .btn:hover{box-shadow:var(--neu-hover);color:var(--accent)}
 .btn:active{box-shadow:var(--neu-in)}
-.btn.primary{background:var(--accent);color:#fff;box-shadow:4px 4px 10px rgba(0,102,102,0.35),-2px -2px 6px rgba(255,255,255,0.15);font-weight:700}
-.btn.primary:hover{background:var(--accent-h);box-shadow:3px 3px 8px rgba(0,102,102,0.4),-2px -2px 6px rgba(255,255,255,0.15)}
-.btn.primary:active{box-shadow:inset 3px 3px 7px rgba(0,0,0,0.25)}
+.btn.primary{background:var(--accent);color:#fff;box-shadow:2px 2px 6px rgba(0,102,102,0.3);font-weight:700}
+.btn.primary:hover{background:var(--accent-h)}
+.btn.primary:active{box-shadow:inset 2px 2px 4px rgba(0,0,0,0.2)}
 .btn.ghost{background:transparent;border:none;color:var(--t3);box-shadow:none}
 .btn.ghost:hover{color:var(--t2);box-shadow:var(--neu-hover)}
 .sbox{flex:1;min-width:160px;position:relative}
@@ -186,7 +194,7 @@ header{position:sticky;top:0;z-index:100;background:var(--header-bg);backdrop-fi
 .tsep{width:1px;height:20px;background:var(--b2);flex-shrink:0}
 
 /* STATS */
-.stats-bar{display:flex;border-bottom:none;background:var(--bg);overflow-x:auto;padding:12px 20px;gap:10px;box-shadow:inset 0 -3px 8px var(--neu-s)}
+.stats-bar{display:flex;border-bottom:1px solid var(--b1);background:var(--bg);overflow-x:auto;padding:10px 20px;gap:8px}
 .stat{flex:1;min-width:85px;padding:10px 14px;border-radius:var(--r);text-align:center;transition:box-shadow 0.15s;box-shadow:var(--neu-out)}
 .stat:hover{box-shadow:var(--neu-hover)}
 .sn{font-family:'Space Mono',monospace;font-size:18px;font-weight:700;line-height:1}
@@ -206,7 +214,7 @@ header{position:sticky;top:0;z-index:100;background:var(--header-bg);backdrop-fi
 
 /* LEAD CARD */
 .card{position:relative;background:var(--bg);border:none;border-radius:var(--rl);transition:box-shadow 0.2s;box-shadow:var(--neu-out)}
-.card:hover{box-shadow:6px 6px 16px var(--neu-s),-6px -6px 16px var(--neu-l)}
+.card:hover{box-shadow:3px 3px 8px var(--neu-s),-3px -3px 8px var(--neu-l)}
 .card.overdue{box-shadow:var(--neu-out),inset 3px 0 0 var(--danger)}.card.due-today{box-shadow:var(--neu-out),inset 3px 0 0 var(--warn)}.card.hipri{box-shadow:var(--neu-out),inset 3px 0 0 var(--accent)}.card.no-response{opacity:0.72}
 .ctop{padding:13px 15px 11px;display:flex;align-items:flex-start;justify-content:space-between;border-bottom:1px solid var(--b1);gap:10px}
 .ctop-l{flex:1;min-width:0}
@@ -336,7 +344,7 @@ header{position:sticky;top:0;z-index:100;background:var(--header-bg);backdrop-fi
 .fu-panel-overlay{position:fixed;inset:0;z-index:115;background:transparent;display:none}
 .fu-panel-overlay.open{display:block}
 .fu-panel{
-  position:fixed;top:54px;left:0;right:0;z-index:116;
+  position:fixed;top:52px;left:0;right:0;z-index:116;
   background:var(--bg);border-bottom:2px solid var(--danger);
   box-shadow:0 8px 20px var(--neu-s);
   max-height:0;overflow:hidden;
@@ -489,11 +497,6 @@ select option{background:var(--s2)}
 .sd-opt:hover{background:var(--s2)}
 .sd-active{background:var(--accent-dim)}
 
-/* ── VIEW TABS ── */
-.view-tabs{display:flex;gap:4px;background:var(--bg);border:none;border-radius:var(--r);padding:3px;flex-shrink:0;box-shadow:var(--neu-in-sm)}
-.view-tab{padding:5px 14px;border-radius:6px;font-size:11px;font-weight:400;color:var(--t3);cursor:pointer;border:none;background:transparent;transition:all 0.13s;white-space:nowrap;font-family:'Space Mono',monospace}
-.view-tab.active{background:var(--bg);color:var(--t1);box-shadow:var(--neu-out)}
-.view-tab:hover:not(.active){color:var(--t2)}
 
 /* ── ALL TICKETS VIEW ── */
 .tv-ticket{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:13px 16px;display:flex;align-items:flex-start;gap:12px;transition:border-color 0.15s,box-shadow 0.15s;cursor:pointer;flex-wrap:wrap}
@@ -510,6 +513,11 @@ select option{background:var(--s2)}
 .ob-chevron{font-size:10px;color:var(--t3)}
 .ob-body{padding:14px;display:flex;flex-direction:column;gap:10px;border-top:1px solid var(--b1)}
 
+/* ── MOBILE NAV STRIP ── */
+.mobile-nav{display:none;align-items:center;gap:0;background:var(--bg);border-bottom:1px solid var(--b1);overflow-x:auto;-webkit-overflow-scrolling:touch;position:sticky;top:50px;z-index:89;padding:0 8px}
+.mobile-nav::-webkit-scrollbar{display:none}
+.mobile-nav .nav-tab{flex-shrink:0;padding:8px 14px;border-radius:0;border-bottom:2px solid transparent}
+.mobile-nav .nav-tab.active{border-bottom-color:var(--accent);color:var(--t1)}
 /* ── THEME CIRCLE OVERLAY ── */
 #themeCircleOverlay{position:fixed;inset:0;z-index:9999;pointer-events:none;display:none}
 
@@ -608,14 +616,15 @@ body.rep-mode .admin-only{display:none!important}
   .ml-hide{display:none}
   .ml-show{display:inline!important}
   /* Header */
-  header{padding:0 12px;height:50px}
-  .logo{font-size:14px}
-  .header-r{gap:6px}
+  header{padding:0 12px;height:50px;grid-template-columns:auto auto 1fr}
+  .header-nav{display:none}
+  .logo{font-size:13px}
+  .header-r{gap:5px;justify-content:flex-end}
   .sync-status{gap:3px}
   /* Squish notif button to icon only */
   .settings-btn{padding:5px 7px}
   /* Toolbar: horizontal scroll strip */
-  .toolbar{padding:8px 12px;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;gap:6px}
+  .toolbar{padding:8px 12px;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;gap:6px;top:50px}
   .toolbar::-webkit-scrollbar{display:none}
   .tsep{flex-shrink:0}
   .sbox{min-width:130px;flex-shrink:0}
@@ -641,6 +650,8 @@ body.rep-mode .admin-only{display:none!important}
   /* Drawer: full width */
   .drawer{width:100%;border-left:none;border-top:1px solid var(--b2);border-radius:18px 18px 0 0}
   .drawer-overlay{background:rgba(0,0,0,0.45)}
+  /* Mobile nav strip */
+  .mobile-nav{display:flex!important}
   /* Follow-up panel */
   .fu-panel{top:50px}
   .fu-panel-inner{padding:12px 12px}
@@ -701,19 +712,32 @@ body.rep-mode .admin-only{display:none!important}
 
 <header>
   <div class="logo"><div class="logo-dot"></div>FLOW<span class="logo-sub">CRM</span></div>
+  <nav class="header-nav">
+    <button class="nav-tab active" data-view="leads" onclick="setView('leads')">Leads</button>
+    <button class="nav-tab" data-view="tickets" onclick="setView('tickets')">Tickets</button>
+    <button class="nav-tab admin-only" data-view="activity" onclick="setView('activity')">Activity</button>
+    <button class="nav-tab admin-only" data-view="analytics" onclick="setView('analytics')">Analytics</button>
+  </nav>
   <div class="header-r">
-    <div class="sync-status"><div class="sync-dot" id="syncDot"></div><span id="syncLbl" class="ml-hide">connecting…</span></div>
-    <div style="display:flex;align-items:center;gap:7px;background:var(--s2);border:1px solid var(--b1);border-radius:99px;padding:5px 14px 5px 9px">
-      <div style="width:22px;height:22px;border-radius:50%;background:var(--accent-dim);border:1px solid rgba(91,106,240,0.3);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--accent);font-weight:700" id="userAvatar">P</div>
-      <span style="font-size:12px;color:var(--t2);font-weight:500" id="userName" class="ml-hide">Flow</span>
-      <span id="roleTag" style="display:none;font-size:9px;background:var(--warn-dim,rgba(184,119,22,.15));color:var(--warn);border-radius:4px;padding:1px 5px;font-weight:600">REP</span>
+    <div class="sync-status"><div class="sync-dot" id="syncDot"></div><span id="syncLbl" class="ml-hide" style="font-size:10px;color:var(--t3)">live</span></div>
+    <div style="display:flex;align-items:center;gap:6px;padding:4px 10px 4px 7px;border-radius:99px;background:var(--b1)">
+      <div style="width:20px;height:20px;border-radius:50%;background:var(--accent-dim);display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--accent);font-weight:700" id="userAvatar">P</div>
+      <span style="font-size:11px;color:var(--t2)" id="userName" class="ml-hide">Flow</span>
+      <span id="roleTag" style="display:none;font-size:9px;background:var(--warn-dim);color:var(--warn);border-radius:4px;padding:1px 5px;font-weight:700">REP</span>
     </div>
-    <button id="themeToggleBtn" class="btn ghost" onclick="toggleTheme()" title="Toggle light/dark mode" style="width:32px;padding:0;justify-content:center;font-size:15px">☾</button>
-    <button class="settings-btn admin-only" onclick="openUsersPanel()" title="User Management">👤<span class="ml-hide"> Users</span></button>
-    <button class="settings-btn" onclick="openNotifPanel()" title="Notification Settings">⚙<span class="ml-hide"> Notifications</span></button>
-    <button class="btn ghost" onclick="doLogout()" style="color:var(--t3)"><span class="ml-hide">Sign out</span><span style="display:none" class="ml-show">↩</span></button>
+    <button id="themeToggleBtn" class="btn ghost" onclick="toggleTheme()" title="Toggle theme" style="width:30px;padding:0;justify-content:center;font-size:14px;box-shadow:none">☾</button>
+    <button class="settings-btn admin-only" onclick="openUsersPanel()" title="Users">👤</button>
+    <button class="settings-btn" onclick="openNotifPanel()" title="Notifications">⚙</button>
+    <button class="btn ghost" onclick="doLogout()" style="color:var(--t3);box-shadow:none;font-size:11px" title="Sign out">↩</button>
   </div>
 </header>
+
+<div class="mobile-nav" id="mobileNav">
+  <button class="nav-tab active" data-view="leads" onclick="setView('leads')">Leads</button>
+  <button class="nav-tab" data-view="tickets" onclick="setView('tickets')">Tickets</button>
+  <button class="nav-tab admin-only" data-view="activity" onclick="setView('activity')">Activity</button>
+  <button class="nav-tab admin-only" data-view="analytics" onclick="setView('analytics')">Analytics</button>
+</div>
 
 <div class="rem" id="remBar" onclick="toggleFuPanel()">
   <div class="rem-dot" id="remDot"></div>
@@ -744,13 +768,6 @@ body.rep-mode .admin-only{display:none!important}
 </div>
 
 <div class="toolbar">
-  <div class="view-tabs">
-    <button class="view-tab active" data-view="leads" onclick="setView('leads')">Leads</button>
-    <button class="view-tab" data-view="tickets" onclick="setView('tickets')">Tickets</button>
-    <button class="view-tab admin-only" data-view="activity" onclick="setView('activity')">Activity</button>
-    <button class="view-tab admin-only" data-view="analytics" onclick="setView('analytics')">Analytics</button>
-  </div>
-  <div class="tsep"></div>
   <button class="btn primary" id="newLeadBtn" onclick="openLeadModal()">＋ New Lead</button>
   <button class="btn ghost" id="bulkSelectBtn" onclick="toggleBulkMode()" title="Select leads to bulk-update">☑ Select</button>
   <button class="btn ghost" id="layoutBtn" onclick="toggleLeadsLayout()" title="Switch between grid and list view">☰</button>
@@ -2683,7 +2700,7 @@ let tvFilters = { status: '', type: '', search: '' };
 function setView(view) {
   if (bulkMode) exitBulkMode();
   currentView = view;
-  document.querySelectorAll('.view-tab').forEach(el => el.classList.toggle('active', el.dataset.view === view));
+  document.querySelectorAll('.nav-tab[data-view]').forEach(el => el.classList.toggle('active', el.dataset.view === view));
   const leadsArea = document.getElementById('leadsArea');
   const ticketsArea = document.getElementById('ticketsArea');
   document.getElementById('activityArea').style.display = 'none';
