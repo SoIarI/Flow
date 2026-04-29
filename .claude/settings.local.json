@@ -4,7 +4,8 @@
       "Bash(git add *)",
       "Bash(git commit -m ' *)",
       "Bash(git -C \"d:/Flow\" add tracker.html CLAUDE.md)",
-      "Bash(git -C d:/Flow commit -m ' *)"
+      "Bash(git -C d:/Flow commit -m ' *)",
+      "Read(//c/Users/Ewity/.claude/**)"
     ]
   }
 }
